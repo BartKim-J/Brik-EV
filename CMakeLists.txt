@@ -158,7 +158,7 @@ add_custom_target(run
 
 add_custom_target(airplay
     sudo LD_LIBRARY_PATH=.:/home/brik/brik_ev_c/airplay_server/bin/lib/ 
-    /home/brik/brik_ev_c/airplay_server/bin/Airplay-ConnectivityForwarder -hqw 1920 -hqh 1080 -lqw 960 -lqh 540
+    /home/brik/brik_ev_c/airplay_server/bin/Airplay-ConnectivityForwarder -hqw 1920 -hqh 1080 -lqw 1280 -lqh 720
 )
 
 # install #

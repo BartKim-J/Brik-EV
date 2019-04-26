@@ -245,7 +245,7 @@ static ERROR_T update_frame(moduleImageViewer_t* module, AVFrame* av_frame)
     SDL_Overlay* bitmap = module->overlay;
     SDL_LockYUVOverlay(bitmap);
 
-#if true   // re-scale
+#if 1   // re-scale
     frameTarget.data[0] = bitmap->pixels[0];
     frameTarget.data[1] = bitmap->pixels[2];
     frameTarget.data[2] = bitmap->pixels[1];

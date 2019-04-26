@@ -14,9 +14,10 @@
 #include "brik_api.h"
 
 /* ******* STATIC DEFINE ******* */
-#define TARGET_MOBILE_FPS  15 // frame per second
-#define TARGET_DESKTOP_FPS 30
-#define TARGET_FPD         350 // frame packet delayed
+#define TARGET_MOBILE_FPS  30 // frame per second
+#define TARGET_DESKTOP_FPS 15
+
+#define TARGET_FPD     10
 
 /* ******* FLAGS ******* */
 #define __NEW_FFMPEG__
@@ -292,6 +293,10 @@ static ERROR_T decode_receive(AVFrame *frame, AVFrame *hw_frame)
     static uint32_t            fpd = 0;
     static uint32_t            fps = 0;
 
+    static bool           skipFlag = 0;
+    static uint32_t       skipCnt  = 0;
+    static uint32_t       skipMax  = 0;
+
     AVFrame*        tmp_frame = NULL;  // Just for pointing frame.
 
     if(frame == NULL || hw_frame == NULL)
@@ -343,6 +348,10 @@ static ERROR_T decode_receive(AVFrame *frame, AVFrame *hw_frame)
 #endif
                 prevWidth  = tmp_frame->width;
                 prevHeight = tmp_frame->height;
+
+                skipFlag = false;
+                skipCnt  = 0;
+                skipMax  = 0;
             }
         }
 #endif
@@ -356,20 +365,54 @@ static ERROR_T decode_receive(AVFrame *frame, AVFrame *hw_frame)
         printf("\n[%3d]FPD\n", fpd, TARGET_FPD);
         ERROR_SystemLog("\n\n- - - - - - - - - - - - - - - - - - - - - - - - - \n");
 
-		// fps fast or frame not delayed
-        if((fps <= TARGET_DESKTOP_FPS) && (fpd <= TARGET_FPD))
+        if(tmp_frame->width < tmp_frame->height) // Mobile. ( Vertical Frame )
         {
-            // display frame.
-            dh_display_decoded_frame(tmp_frame);
-            fps = dh_display_think_FPS();
-        }
-        else if(tmp_frame->width <= tmp_frame->height) // mobile.
-        {
-            if(fps <= TARGET_MOBILE_FPS)
+            if(!skipFlag)
             {
-                // display frame.
+                skipFlag = true;
+
                 dh_display_decoded_frame(tmp_frame);
                 fps = dh_display_think_FPS();
+            }
+            else
+            {
+                skipCnt++;
+
+                if(skipCnt >= 4)
+                {
+                    skipCnt  = 0;
+                    skipFlag = false;
+                }
+            }
+        }
+        else // Desktop
+        {
+            if((fpd <= TARGET_FPD))
+            {
+                dh_display_decoded_frame(tmp_frame);
+                fps = dh_display_think_FPS();
+            }
+            else
+            { 
+                skipMax = ((fpd / 10) <= 5) ? (fpd / 10): 5;
+               
+                if(!skipFlag)
+                {
+                    skipFlag = true;
+                
+                    dh_display_decoded_frame(tmp_frame);
+                    fps = dh_display_think_FPS();
+                }
+                else
+                {
+                    skipCnt++;
+
+                    if(skipCnt >= skipMax)
+                    {
+                        skipCnt = 0;
+                        skipFlag = false;
+                    }
+                }
             }
         }
 
@@ -499,8 +542,6 @@ static int handle_video_disconnect(void)
 static void handle_video_data(AVPacketPacket* packet, void* payload)
 {
     unsigned char * data = (unsigned char*)payload;
-
-    system("clear");
 
     ERROR_SystemLog("  \n- - - - - PACKET RECEIVE :: VIDEO(DATA) - - - - -\n");
     for (int i = 0; i < 40; i++)
