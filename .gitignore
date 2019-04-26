@@ -1,0 +1,19 @@
+# CMake
+CMakeCache.txt
+CMakeFiles/
+Debug/
+bin/
+build/
+Makefile
+cmake_install.cmake
+
+
+# Eclipse
+.cproject
+.project
+.settings/
+
+
+# Locale Folders
+logs/
+airplay_server/bin/lib/

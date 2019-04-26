@@ -1,0 +1,31 @@
+/**
+ * @file brik_utils.h
+ * @author Lex
+ * @date
+ * @brief
+ *
+ * @see http://www.stack.nl/~dimitri/doxygen/docblocks.html
+ * @see http://www.stack.nl/~dimitri/doxygen/commands.html
+ *
+ */
+#ifndef __BRIK_UTILS_H_
+#define __BRIK_UTILS_H_
+
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif /* MIN */
+
+#ifndef MAX
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#endif  /* MAX */
+
+
+#ifndef bool
+typedef int bool;
+#define true 1
+#define false 0
+#endif/* bool */
+
+extern void sps_parse(const unsigned char * pStart, unsigned short nLen, int32_t *frame_width, int32_t *frame_height);
+
+#endif
