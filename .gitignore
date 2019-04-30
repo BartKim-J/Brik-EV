@@ -17,3 +17,10 @@ cmake_install.cmake
 # Locale Folders
 logs/
 airplay_server/bin/lib/
+
+
+# File System
+.DS_Store
+._.DS_Store
+.AppleDobule
+._.AppleDouble
