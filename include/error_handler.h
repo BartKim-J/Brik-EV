@@ -1,5 +1,5 @@
 /*
- * brik_error.h
+ * error_handler.h
  *
  *  Created on: Apr 23, 2019
  *      Author: BartKim

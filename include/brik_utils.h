@@ -1,8 +1,10 @@
 /**
  * @file brik_utils.h
- * @author Lex
- * @date
+ * @author Ben
+ * @date 4 Tue 2019
  * @brief
+ *
+ * @bug sw decoder not working maybe sdl option.
  *
  * @see http://www.stack.nl/~dimitri/doxygen/docblocks.html
  * @see http://www.stack.nl/~dimitri/doxygen/commands.html

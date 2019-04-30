@@ -1,5 +1,5 @@
 /**
- * @file brik_error.c
+ * @file error_handler.c
  * @author bato
  * @date 23 April 2019
  * @brief
@@ -12,8 +12,6 @@
 #include "brik_api.h"
 
 /* ******* STATIC DEFINE ******* */
-
-/* ******* SYSTEM DEFINE ******* */
 
 /* ******* GLOBAL VARIABLE ******* */
 

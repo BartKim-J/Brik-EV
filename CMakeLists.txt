@@ -36,6 +36,9 @@ set(PRJ_INCLUDE_PATH ${PRJ_ROOT_PATH}/include)
 set(PRJ_SOURCE_PATH	${PRJ_ROOT_PATH}/src)
 set(PRJ_BINARY_PATH ${PRJ_ROOT_PATH}/bin)
 
+set(PRJ_MODULE_PATH ${PRJ_SOURCE_PATH}/Module)
+set(PRJ_SYSETM_PATH ${PRJ_SOURCE_PATH}/System)
+
 # Output Paths #
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PRJ_BINARY_PATH}/build)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PRJ_BINARY_PATH}/lib)
@@ -66,21 +69,21 @@ set(
         ${PRJ_SOURCE_PATH}/brik.c
 
         # System #
-        ${PRJ_SOURCE_PATH}/brik_error.c
-        ${PRJ_SOURCE_PATH}/sys/sps_parser.c
-        ${PRJ_SOURCE_PATH}/sys/threadqueue.c
+        ${PRJ_SYSETM_PATH}/error_handler.c
+        ${PRJ_SYSETM_PATH}/sps_parser.c
+        ${PRJ_SYSETM_PATH}/threadqueue.c
 
         # Packet #
-        ${PRJ_SOURCE_PATH}/packet_handler.c
-        ${PRJ_SOURCE_PATH}/connect_mgmt.c
+        ${PRJ_MODULE_PATH}/packet_handler.c
+        ${PRJ_MODULE_PATH}/connect_mgmt.c
 
         # Video #
-        ${PRJ_SOURCE_PATH}/video_handler.c
+        ${PRJ_MODULE_PATH}/video_handler.c
 
         # Display #
-        ${PRJ_SOURCE_PATH}/display_handler.c
-        ${PRJ_SOURCE_PATH}/display_handler_sdl.c
-        ${PRJ_SOURCE_PATH}/display_handler_sdl2.c
+        ${PRJ_MODULE_PATH}/display_handler.c
+        ${PRJ_MODULE_PATH}/display_handler_sdl.c
+        ${PRJ_MODULE_PATH}/display_handler_sdl2.c
 )
 
 # Flags #

@@ -11,12 +11,15 @@
 #ifndef __BRIK_API_H_
 #define __BRIK_API_H_
 
+/* *** Standard *** */
 #include <stdio.h>
 #include <stdlib.h>
 
+/* *** Linux System *** */
 #include <sys/socket.h>
 #include <sys/types.h>
 
+/* *** TCP/IP - Socket *** */
 #include <netinet/in.h>
 #include <netinet/ip.h>
 
@@ -25,35 +28,38 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <libavutil/frame.h>
-#include <libavcodec/avcodec.h>
-#include <libswscale/swscale.h>
-
+/* *** Renderer *** */
 #ifdef SDL2
 #include <SDL2/SDL.h>
 #else // SDL1
 #include <SDL/SDL.h>
-#include <libswscale/swscale.h>
 #endif
 
-/* Type */
+#include <libavutil/frame.h>
+#include <libavcodec/avcodec.h>
+#include <libswscale/swscale.h>
+
+/* *** SYSTEM *** */
+#include "sys/threadqueue.h"
 #include "packets.h"
 
-// brik
 #include "brik_utils.h"
-#include "brik_error.h"
+#include "error_handler.h"
 
-// brik system
-#include "sys/threadqueue.h"
-
-// packet handler
+/* *** MODULE *** */
+// Packet Handler
 #include "packet_handler.h"
-// connection manager
+
+// Connection Manager
 #include "connect_mgmt.h"
-// video_handler
+
+// Video Handler
 #include "video_handler.h"
-// display handler
+
+// Display
 #include "display_handler.h"
+
+
 
 
 

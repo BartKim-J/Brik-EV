@@ -18,7 +18,10 @@ static struct sockaddr_in  sock_tcp_addr;
 static struct sockaddr_in  client_addr;
 
 /* ******* STATIC FUNCTIONS ******* */
+/* *** Module *** */
 static ERROR_T sModules_Init(void);
+
+/* *** TCP/IP *** */
 static ERROR_T sSocketListener_Init(void);
 static ERROR_T sClientHandler(void);
 
