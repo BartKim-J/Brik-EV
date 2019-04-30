@@ -1,11 +1,17 @@
 /**
  * @file display_handler.c
- * @author Bato
- * @date  7 Mar 2019
+ * @author Ben
+ * @date 4 Tue 2019
  * @brief
+ *
+ * @see http://www.stack.nl/~dimitri/doxygen/docblocks.html
+ * @see http://www.stack.nl/~dimitri/doxygen/commands.html
+ *
  */
-#include "display_handler.h"
+#ifdef DISPLAY_TYPE_FB
 #include "brik_api.h"
+#include "display_handler.h"
+
 
 #ifdef linux
 /* OS */
@@ -276,3 +282,6 @@ static int sDistroyWindow(FB_Window_t* window)
 }
 
 
+
+
+#endif

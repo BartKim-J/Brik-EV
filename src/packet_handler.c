@@ -560,7 +560,7 @@ static void* ph_thread_packet_handler(void *arg)
             printf("socket might had been disconnected from the remote host.\n");
             cm_close_current_connection(connection_client);
 
-            dh_display_clean();
+            MODULE_Display_Clean();
 
             return NULL;
         }

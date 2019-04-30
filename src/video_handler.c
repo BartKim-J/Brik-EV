@@ -54,7 +54,7 @@ static ERROR_T sVideoContext_Init(int width, int height, int framerate, void* ex
 /* *** FFMPEG DECODE FRAME( WITH OVERLAY UPDATE ) *** */
 static ERROR_T sDecoder_sendPacket(AVPacketPacket* packet, void* payload);
 static ERROR_T sDecoder_receiveFrame(AVFrame *frame, AVFrame *hw_frame);
-static ERROR_T sDecoder_updateOveray(AVFrame *frame);
+static ERROR_T sDecoder_updateOverlay(AVFrame *frame);
 
 /* *** FFMPEG HANDLE VIDEO MESSAGE *** */
 static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload);
@@ -260,13 +260,13 @@ static ERROR_T sDecoder_receiveFrame(AVFrame *frame, AVFrame *hw_frame)
         }
 
         // if get frame updateOveray
-        sDecoder_updateOveray(tmp_frame);
+        sDecoder_updateOverlay(tmp_frame);
     }
 
     return ret;
 }
 
-static ERROR_T sDecoder_updateOveray(AVFrame *frame)
+static ERROR_T sDecoder_updateOverlay(AVFrame *frame)
 {
     ERROR_T ret = ERROR_OK;
 
@@ -286,9 +286,9 @@ static ERROR_T sDecoder_updateOveray(AVFrame *frame)
         if((prevWidth != frame->width) || (prevHeight != frame->height))
         {
 #ifdef __RK_HW_DECODER__
-            dh_display_init_video_overlay(frame->width, frame->height, frame->format, 0);
+            MODULE_Display_Init_Overlay(frame->width, frame->height, frame->format, 0);
 #else
-            dh_display_init_video_overlay(frame->width, frame->height, AV_PIX_FMT_YUV420P, 0);
+            MODULE_Display_Init_Overlay(frame->width, frame->height, AV_PIX_FMT_YUV420P, 0);
 #endif
             prevWidth  = frame->width;
             prevHeight = frame->height;
@@ -317,7 +317,7 @@ static ERROR_T sDecoder_updateOveray(AVFrame *frame)
         {
             skipFlag = true;
 
-            dh_display_decoded_frame(frame);
+            MODULE_Display_Update(frame);
         }
         else
         {
@@ -333,10 +333,10 @@ static ERROR_T sDecoder_updateOveray(AVFrame *frame)
     else // if not delayed FPD
     {
         // always frame updated.
-        dh_display_decoded_frame(frame);
+        MODULE_Display_Update(frame);
     }
 
-    fps = dh_display_get_FPS();
+    fps = MODULE_Display_FPS();
     fpd = thread_queue_length(&queue_vh);
 
     // Data Log
@@ -368,7 +368,7 @@ static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload)
 
     int use_sps_resolution = 0;
 
-    dh_display_clean();
+    MODULE_Display_Clean();
 
     ERROR_SystemLog("\n\n- - - - PACKET RECIVE :: VIDEO(CODEC) - - - -\n\n");
 
@@ -403,11 +403,11 @@ static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload)
 
     if (use_sps_resolution == 1)
     {
-        dh_display_init_video_overlay(width_sps, height_sps, AV_PIX_FMT_YUV420P, 0);
+        MODULE_Display_Init_Overlay(width_sps, height_sps, AV_PIX_FMT_YUV420P, 0);
     }
     else
     {
-        dh_display_init_video_overlay(packet->video.width, packet->video.height, AV_PIX_FMT_YUV420P, 0);
+        MODULE_Display_Init_Overlay(packet->video.width, packet->video.height, AV_PIX_FMT_YUV420P, 0);
     }
 #endif
     if (sDeCoder_Init(packet, payload, packet->hdr.payloadSize) < 0)
@@ -481,7 +481,7 @@ static ERROR_T handle_video_stop(void)
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize video queue.");
     }
 
-    dh_display_clean();
+    MODULE_Display_Clean();
 
     return status;
 }

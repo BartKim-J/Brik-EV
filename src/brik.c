@@ -12,40 +12,84 @@
 /* *** LOCAL *** */
 #include "brik_api.h"
 
+/* ******* GLOBAL VARIABLE ******* */
+static int sock_tcp;
+static struct sockaddr_in  sock_tcp_addr;
+static struct sockaddr_in  client_addr;
+
+/* ******* STATIC FUNCTIONS ******* */
+static ERROR_T sModules_Init(void);
+static ERROR_T sSocketListener_Init(void);
+static ERROR_T sClientHandler(void);
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *  main
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 int main(int argc, char* argv[])
 {
-    int sock_tcp;
-    int connection_client;
-    unsigned int client_addr_size;
-    struct sockaddr_in  sock_tcp_addr;
-    struct sockaddr_in  client_addr;
-    int connection_count = 0;
+    ERROR_T ret = ERROR_OK;
 
-    int ret = 0;
+    ret = sModules_Init();
 
-    printf("Hello Brik\n");
-
-    // init display
-    ret = dh_display_init();
-
-    if (ret != 0)
+    while(true)
     {
-        printf("Failed to initialize Display\n");
-        exit(1);
+        ret = sClientHandler();
+        if(ret != ERROR_OK)
+        {
+            ERROR_StatusCheck(BRIK_STATUS_NOT_OK ,"Client Connetion Error.");
+        }
     }
 
-    // clear display w/ black screen
-    dh_display_clean();
+    return ERROR_OK;
+}
 
-    //init video thread
-    MODULE_VideoHandler_Init();
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *  Modules
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+static ERROR_T sModules_Init(void)
+{
+    ERROR_T ret = ERROR_OK;
 
-    //init socket and server thread
+    ret = MODULE_Display_Init();
+    if (ret != ERROR_OK)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize Display.");
+    }
+
+    ret = MODULE_VideoHandler_Init();
+    if (ret != ERROR_OK)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize Video Handler.");
+    }
+
+    ret = sSocketListener_Init();
+    if (ret != ERROR_OK)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize Socket Listener.");
+    }
+
+    return ret;
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *  Socket & TCP
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+static ERROR_T sSocketListener_Init(void)
+{
+    ERROR_T ret = ERROR_OK;
+
+    // Init socket and server thread
     sock_tcp = socket(AF_INET, SOCK_STREAM, 0);
     if (sock_tcp == -1)
     {
-        printf("Failed to open receiver socket\n");
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to open receiver socket.");
     }
 
     memset(&sock_tcp_addr, 0, sizeof(sock_tcp_addr));
@@ -55,40 +99,46 @@ int main(int argc, char* argv[])
 
     if (bind(sock_tcp, (struct sockaddr*)&sock_tcp_addr, sizeof(sock_tcp_addr)) == -1)
     {
-        printf("Failed to bind socket listener\n");
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to bind socket listener.");
     }
 
     if (listen(sock_tcp, 30) == -1)
     {
-        printf("Listen Failed\n");
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Listen Failed.");
     }
 
-    while(true)
+    return ret;
+}
+
+static ERROR_T sClientHandler(void)
+{
+    ERROR_T ret = ERROR_OK;
+
+    int connection_client = 0;
+    int connection_count = 0;
+
+    unsigned int client_addr_size = 0;
+
+    printf("Waiting for connection %d\n", connection_count);
+    client_addr_size = sizeof(client_addr);
+    connection_client = accept(sock_tcp, (struct sockaddr *)&client_addr, &client_addr_size);
+
+    if (connection_client == ERROR_NOT_OK)
     {
-        printf("Waiting for connection %d\n", connection_count);
-        client_addr_size = sizeof(client_addr);
-        connection_client = accept(sock_tcp, (struct sockaddr *)&client_addr, &client_addr_size);
-
-        if (connection_client == -1)
+        close(connection_client);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Connection Failed.");
+    }
+    else
+    {
+        printf("info_connection: count %d, new connection %d\n", connection_count, connection_client);
+        // open handler thread for packet deliverey
+        if(ph_init_handler_thread(connection_count, connection_client) == ERROR_NOT_OK)
         {
-            printf("Connection Failed\n");
-            close(connection_client);
-            exit(1);
+            printf("Failed to create packet handler %d\n", connection_count);
+            return ERROR_NOT_OK;
         }
-        else
-        {
-            printf("info_connection: count %d, new connection %d\n", connection_count, connection_client);
-            // open handler thread for packet deliverey
-            if(ph_init_handler_thread(connection_count, connection_client) == -1)
-            {
-                printf("Failed to create packet handler %d\n", connection_count);
-                exit(1);
-            }
-            connection_count++;
-        }
+        connection_count++;
     }
 
-    return 0;
+    return ret;
 }

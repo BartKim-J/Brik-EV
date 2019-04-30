@@ -4,9 +4,9 @@
  * @date  7 Mar 2019
  * @brief
  */
-#include "display_handler_sdl.h"
+#ifdef DISPLAY_TYPE_SDL2
 #include "brik_api.h"
-
+#include "display_handler_sdl.h"
 
 /* ******* STATIC DEFINE ******* */
 moduleImageViewer_t moduleImageViewer;
@@ -26,7 +26,7 @@ static int update_frame(moduleImageViewer_t* module, AVFrame* av_frame);
  *
  * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * */
 
- int dh_display_init(void)
+ int MODULE_Display_Init(void)
  {
     int ret = 0;
 
@@ -92,18 +92,18 @@ static int update_frame(moduleImageViewer_t* module, AVFrame* av_frame);
      return ret;
  }
 
-void dh_display_clean(void)
+void MODULE_Display_Clean(void)
 {
     clean_window(&moduleImageViewer);
 }
 
-int dh_display_decoded_frame(AVFrame* av_frame)
+int MODULE_Display_Update(AVFrame* av_frame)
 {
     return update_frame(&moduleImageViewer, av_frame);
 }
 
 
-int dh_display_destroy(void)
+int MODULE_Display_Destroy(void)
 {
     SDL_DestroyTexture(moduleImageViewer.texture);
     SDL_DestroyRenderer(moduleImageViewer.renderer);
@@ -201,3 +201,6 @@ static int update_texture(moduleImageViewer_t* module, AVFrame* av_frame)
 
     return ret;
 }
+
+
+#endif

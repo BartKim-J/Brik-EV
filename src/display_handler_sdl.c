@@ -5,6 +5,7 @@
  * @brief
  */
 /* ******* INCLUDE ******* */
+#ifdef DISPLAY_TYPE_SDL
 #include "brik_api.h"
 #include "display_handler_sdl.h"
 
@@ -19,27 +20,27 @@ static uint32_t frametimes[FRAME_VALUES]; // An array to store frame times:
 static uint32_t frametimelast;            // Last calculated SDL_GetTicks
 static uint32_t framecount;               // total frames rendered
 
-static float framespersecond;             // the value you want
+static float    framespersecond;
 
 static moduleImageViewer_t moduleImageViewer = {NULL, NULL, NULL, {0,0,0,0}, 0, 0, 0, 0};
 
 /* ******* STATIC FUNCTIONS ******* */
 /* *** IMAGE *** */
-static ERROR_T clean_window(moduleImageViewer_t* module);
-static ERROR_T update_frame(moduleImageViewer_t* module, AVFrame* av_frame);
+static ERROR_T sScreenClean(moduleImageViewer_t* module);
+static ERROR_T sScreenUpdate(moduleImageViewer_t* module, AVFrame* av_frame);
 
 /* *** FPS *** */
-static void initFPS(void);
-static void syncFPS(void);
+static void sFPS_Init(void);
+static void sFPS_Update(void);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
  *  Extern Functions
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
- int dh_display_init(void)
- {
-     ERROR_T ret = 0;
+ERROR_T MODULE_Display_Init(void)
+{
+     ERROR_T ret = ERROR_OK;
 
      const SDL_VideoInfo* info_display;
      printf("MODULE INIT => Display handler.\n");
@@ -47,7 +48,7 @@ static void syncFPS(void);
      if (SDL_WasInit(SDL_INIT_VIDEO))
      {
          printf("SDL Video already initialized\n");
-         return 0;
+         return ERROR_OK;
      }
 
      /* SDL INIT */
@@ -73,15 +74,16 @@ static void syncFPS(void);
     }
 
     SDL_ShowCursor(SDL_FALSE);
-    /* Clean Before Window Screen */
-    ret = clean_window(&moduleImageViewer);
 
-    initFPS();
+    /* Clean Before Window Screen */
+    ret = sScreenClean(&moduleImageViewer);
+
+    sFPS_Init();
 
     return ret;
 }
 
-void dh_display_init_video_overlay(int width, int height, uint32_t format, uint32_t dstformat)
+void MODULE_Display_Init_Overlay(int width, int height, uint32_t format, uint32_t dstformat)
 {
     printf("%s, video resolution, %d x %d\n", __FUNCTION__, width, height);
     if(moduleImageViewer.screen == NULL)
@@ -131,7 +133,6 @@ void dh_display_init_video_overlay(int width, int height, uint32_t format, uint3
     }
 
     // calculate overlay ratio, pos & size
-
     if (moduleImageViewer.screen_w * height / width > height)     // vertical fit
     {
         moduleImageViewer.rect_overlay_dst.y = 0;
@@ -139,29 +140,29 @@ void dh_display_init_video_overlay(int width, int height, uint32_t format, uint3
         moduleImageViewer.rect_overlay_dst.w = moduleImageViewer.rect_overlay_dst.h * width / height;
         moduleImageViewer.rect_overlay_dst.x = (moduleImageViewer.screen_w - moduleImageViewer.rect_overlay_dst.w) / 2;
     }
-    else        //horizontal fit
+    else //horizontal fit
     {
         moduleImageViewer.rect_overlay_dst.x = 0;
         moduleImageViewer.rect_overlay_dst.w = moduleImageViewer.screen_w;
         moduleImageViewer.rect_overlay_dst.h = moduleImageViewer.rect_overlay_dst.w * height / width;
         moduleImageViewer.rect_overlay_dst.y = (moduleImageViewer.screen_h - moduleImageViewer.rect_overlay_dst.h) / 2;
     }
+
     printf("overlay dimension calculated: %d x %d\n\n", moduleImageViewer.rect_overlay_dst.w, moduleImageViewer.rect_overlay_dst.h);
-
-
 }
-void dh_display_clean(void)
+
+void MODULE_Display_Clean(void)
 {
-    clean_window(&moduleImageViewer);
+    sScreenClean(&moduleImageViewer);
 }
 
-int dh_display_decoded_frame(AVFrame* av_frame)
+int MODULE_Display_Update(AVFrame* av_frame)
 {
-    return update_frame(&moduleImageViewer, av_frame);
+    return sScreenUpdate(&moduleImageViewer, av_frame);
 }
 
 
-int dh_display_destroy(void)
+int MODULE_Display_Destroy(void)
 {
     SDL_FreeYUVOverlay(moduleImageViewer.overlay);
     SDL_FreeSurface(moduleImageViewer.screen);
@@ -170,7 +171,7 @@ int dh_display_destroy(void)
     return 0;
 }
 
-float dh_display_get_FPS(void)
+float MODULE_Display_FPS(void)
 {
     return framespersecond;
 }
@@ -179,10 +180,10 @@ float dh_display_get_FPS(void)
 
 /* * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * *
  *
- *  Static Functions
+ *  Screen
  *
  * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * */
-static ERROR_T update_frame(moduleImageViewer_t* module, AVFrame* av_frame)
+static ERROR_T sScreenUpdate(moduleImageViewer_t* module, AVFrame* av_frame)
 {
     ERROR_T ret = ERROR_OK;
 
@@ -230,12 +231,12 @@ static ERROR_T update_frame(moduleImageViewer_t* module, AVFrame* av_frame)
 
     SDL_DisplayYUVOverlay(bitmap, &(module->rect_overlay_dst));
 
-    syncFPS();
+    sFPS_Update();
 
     return ret;
 }
 
-static ERROR_T clean_window(moduleImageViewer_t* module)
+static ERROR_T sScreenClean(moduleImageViewer_t* module)
 {
     ERROR_T ret = ERROR_OK;
 
@@ -255,7 +256,12 @@ static ERROR_T clean_window(moduleImageViewer_t* module)
     return ret;
 }
 
-static void initFPS(void)
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *  FPS
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+static void sFPS_Init(void)
 {
     // Set all frame times to 0ms.
     memset(frametimes, 0, sizeof(frametimes));
@@ -264,9 +270,8 @@ static void initFPS(void)
     frametimelast = SDL_GetTicks();
 }
 
-static void syncFPS(void)
+static void sFPS_Update(void)
 {
-
     uint32_t frametimesindex = 0;
     uint32_t getticks = 0;
     uint32_t count = 0;
@@ -316,3 +321,6 @@ static void syncFPS(void)
     framespersecond = 1000.f / framespersecond;
 }
 
+
+
+#endif

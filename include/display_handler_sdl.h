@@ -9,12 +9,12 @@
 #define __DISPLAY_HANDLER_SDL_H_
 
 /*************************************************************
- * @struct frameBuffer_Image
+ * @struct
  * @brief
  * @{
  */
 
-#ifdef SDL2
+#ifdef DISPLAY_TYPE_SDL2
  typedef struct image_viewer
  {
      SDL_Window     *window;

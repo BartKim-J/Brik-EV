@@ -78,9 +78,9 @@ set(
         ${PRJ_SOURCE_PATH}/video_handler.c
 
         # Display #
-#       ${PRJ_SOURCE_PATH}/display_handler.c
+        ${PRJ_SOURCE_PATH}/display_handler.c
         ${PRJ_SOURCE_PATH}/display_handler_sdl.c
-#       ${PRJ_SOURCE_PATH}/display_handler_sdl2.c
+        ${PRJ_SOURCE_PATH}/display_handler_sdl2.c
 )
 
 # Flags #
@@ -112,28 +112,15 @@ set(CMAKE_EXE_LINKER_FLAGS_DEBUG "-DDEBUG -DLINKER_FLAGS")
 set(CMAKE_C_FLAGS_RELEASE "-DRELEASE -DC_FLAGS")
 set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-DRELEASE -DLINKER_FLAGS")
 
-# Mode #
-set(
-    # Mode Name #
-    Mode
-
-    # Debug #
-    -DDEBUG_MODE=true
-
-    # Demo #
-    -DDEMO_MODE=false
-
-    # Release #
-    -DRELEASE_MODE=false
-)
-
 # Config #
 set(
     # Config Name #
     Config
 
-    # Mode #
-    ${Mode}
+    -DDISPLAY_TYPE_SDL
+    #-DDISPLAY_TYPE_SDL2    
+    #-DDISPLAY_TYPE_FB
+
 )
 
 # Command #
