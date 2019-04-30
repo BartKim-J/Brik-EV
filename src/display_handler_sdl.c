@@ -25,9 +25,12 @@ static moduleImageViewer_t moduleImageViewer = {NULL, NULL, NULL, {0,0,0,0}, 0, 
 
 /* ******* STATIC FUNCTIONS ******* */
 /* *** IMAGE *** */
-//from YUV frame
 static ERROR_T clean_window(moduleImageViewer_t* module);
 static ERROR_T update_frame(moduleImageViewer_t* module, AVFrame* av_frame);
+
+/* *** FPS *** */
+static void initFPS(void);
+static void syncFPS(void);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
@@ -72,6 +75,8 @@ static ERROR_T update_frame(moduleImageViewer_t* module, AVFrame* av_frame);
     SDL_ShowCursor(SDL_FALSE);
     /* Clean Before Window Screen */
     ret = clean_window(&moduleImageViewer);
+
+    initFPS();
 
     return ret;
 }
@@ -165,70 +170,12 @@ int dh_display_destroy(void)
     return 0;
 }
 
-
-// This function gets called once on startup.
-void dh_display_init_FPS(void)
+float dh_display_get_FPS(void)
 {
-        // Set all frame times to 0ms.
-        memset(frametimes, 0, sizeof(frametimes));
-        framecount = 0;
-        framespersecond = 0;
-        frametimelast = SDL_GetTicks();
+    return framespersecond;
 }
 
-uint32_t dh_display_think_FPS(void)
-{
 
-        uint32_t frametimesindex = 0;
-        uint32_t getticks = 0;
-        uint32_t count = 0;
-        uint32_t i = 0;
-
-        // frametimesindex is the position in the array. It ranges from 0 to FRAME_VALUES.
-        // This value rotates back to 0 after it hits FRAME_VALUES.
-        frametimesindex = framecount % FRAME_VALUES;
-
-        // store the current time
-        getticks = SDL_GetTicks();
-
-        // save the frame time value
-        frametimes[frametimesindex] = getticks - frametimelast;
-
-        // save the last frame time for the next fpsthink
-        frametimelast = getticks;
-
-        // increment the frame count
-        framecount++;
-
-        // Work out the current framerate
-
-        // The code below could be moved into another function if you don't need the value every frame.
-
-        // I've included a test to see if the whole array has been written to or not. This will stop
-        // strange values on the first few (FRAME_VALUES) frames.
-        if (framecount < FRAME_VALUES)
-        {
-            count = framecount;
-        }
-        else
-        {
-            count = FRAME_VALUES;
-        }
-
-        // add up all the values and divide to get the average frame time.
-        framespersecond = 0;
-        for (i = 0; i < count; i++)
-        {
-            framespersecond += frametimes[i];
-        }
-
-        framespersecond /= count;
-
-        // now to make it an actual frames per second value...
-        framespersecond = 1000.f / framespersecond;
-
-        return (uint32_t)framespersecond;
-}
 
 /* * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * *
  *
@@ -283,6 +230,8 @@ static ERROR_T update_frame(moduleImageViewer_t* module, AVFrame* av_frame)
 
     SDL_DisplayYUVOverlay(bitmap, &(module->rect_overlay_dst));
 
+    syncFPS();
+
     return ret;
 }
 
@@ -303,10 +252,67 @@ static ERROR_T clean_window(moduleImageViewer_t* module)
     //SDL_Flip(module->screen);
     SDL_FillRect(module->screen, &rect_fill, white);
 
-    // Init FPS Info
-    dh_display_init_FPS();
-
     return ret;
 }
 
+static void initFPS(void)
+{
+    // Set all frame times to 0ms.
+    memset(frametimes, 0, sizeof(frametimes));
+    framecount = 0;
+    framespersecond = 0;
+    frametimelast = SDL_GetTicks();
+}
+
+static void syncFPS(void)
+{
+
+    uint32_t frametimesindex = 0;
+    uint32_t getticks = 0;
+    uint32_t count = 0;
+    uint32_t i = 0;
+
+    // frametimesindex is the position in the array. It ranges from 0 to FRAME_VALUES.
+    // This value rotates back to 0 after it hits FRAME_VALUES.
+    frametimesindex = framecount % FRAME_VALUES;
+
+    // store the current time
+    getticks = SDL_GetTicks();
+
+    // save the frame time value
+    frametimes[frametimesindex] = getticks - frametimelast;
+
+    // save the last frame time for the next fpsthink
+    frametimelast = getticks;
+
+    // increment the frame count
+    framecount++;
+
+    // Work out the current framerate
+
+    // The code below could be moved into another function if you don't need the value every frame.
+
+    // I've included a test to see if the whole array has been written to or not. This will stop
+    // strange values on the first few (FRAME_VALUES) frames.
+    if (framecount < FRAME_VALUES)
+    {
+        count = framecount;
+    }
+    else
+    {
+        count = FRAME_VALUES;
+    }
+
+    // add up all the values and divide to get the average frame time.
+    framespersecond = 0;
+    for (i = 0; i < count; i++)
+    {
+        framespersecond += frametimes[i];
+    }
+
+    framespersecond /= count;
+
+    // now to make it an actual frames per second value...
+    framespersecond = 1000.f / framespersecond;
+}
 

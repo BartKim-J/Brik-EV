@@ -15,6 +15,7 @@
 #include <sys/time.h>
 #include "sys/threadqueue.h"
 
+#include "brik_error.h"
 
 #define MSGPOOL_SIZE 512
 
@@ -106,7 +107,7 @@ int thread_queue_add(struct threadqueue *queue, void *data, long msgtype)
     queue->length++;
     pthread_mutex_unlock(&queue->mutex);
 
-    return 0;
+    return ERROR_OK;
 
 }
 

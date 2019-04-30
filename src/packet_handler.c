@@ -190,7 +190,7 @@ static void packet_cmd_disconnect(int connection_client, void* packet)
     }
 
     printf("sending video stop message = %p, extradata = %p\n", message->packet, message->payload);
-    msg_ret = vh_send_message((void*)message, VH_MSG_TYPE_VIDEO_STOP);
+    msg_ret = MODULE_VideoHandler_SendMessage((void*)message, VH_MSG_TYPE_VIDEO_STOP);
     if(msg_ret != 0)
     {
         printf("Error while sending video stop message to video handler: %d\n", msg_ret);
@@ -437,7 +437,7 @@ static void packet_video_codec(int connection_client, void* packet, void* payloa
     message->payload = extradata;
 
     printf("sending video codec codec_packet = %p, extradata = %p\n", codec_packet, extradata);
-    msg_ret = vh_send_message((void*)message, VH_MSG_TYPE_VIDEO_CODEC);
+    msg_ret = MODULE_VideoHandler_SendMessage((void*)message, VH_MSG_TYPE_VIDEO_CODEC);
     if(msg_ret != 0)
     {
         printf("Error while sending video_codec message to video handler: %d\n", msg_ret);
@@ -490,7 +490,7 @@ static void packet_video_data(int connection_client, void* packet, void* payload
     message->payload = framedata;
 
     //printf("sending video data message packet = %p, payload = %p\n", video_packet, framedata);
-    msg_ret = vh_send_message((void*)message, VH_MSG_TYPE_VIDEO_DATA);
+    msg_ret = MODULE_VideoHandler_SendMessage((void*)message, VH_MSG_TYPE_VIDEO_DATA);
     if(msg_ret != 0)
     {
         printf("Error while sending video_codec message to video handler: %d\n", msg_ret);

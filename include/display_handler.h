@@ -37,13 +37,11 @@ typedef struct frameBuffer_Window
     long  screenSize;
 } FB_Window_t;
 
-extern int  dh_display_init(void);
-extern void dh_display_init_video_overlay(int width, int height, uint32_t src_format, uint32_t dst_format);
-extern void dh_display_clean(void);
-extern int  dh_display_decoded_frame(AVFrame* frame);
-extern int  dh_display_destroy(void);
-
-extern void dh_display_init_FPS(void);
-extern uint32_t  dh_display_think_FPS(void);
+extern int      dh_display_init(void);
+extern void     dh_display_init_video_overlay(int width, int height, uint32_t src_format, uint32_t dst_format);
+extern void     dh_display_clean(void);
+extern int      dh_display_decoded_frame(AVFrame* frame);
+extern int      dh_display_destroy(void);
+extern float    dh_display_get_FPS(void);
 
 #endif

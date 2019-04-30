@@ -1,15 +1,58 @@
+/**
+ * @file video_handler.h
+ * @author Ben
+ * @date
+ * @brief
+ *
+ * @bug sw decoder not working maybe sdl option.
+ *
+ * @see http://www.stack.nl/~dimitri/doxygen/docblocks.html
+ * @see http://www.stack.nl/~dimitri/doxygen/commands.html
+ *
+ *
+ * @defgroup VIDEO_HANDLER Vider Handler
+ * @ingroup MODULE
+ * @brief Video Handler Module Functions.
+ * @{
+ */
 #ifndef __VIDEO_HANDLER_H_
 #define __VIDEO_HANDLER_H_
 
-#define VH_MSG_TYPE_VIDEO_CODEC 1
-#define VH_MSG_TYPE_VIDEO_DATA  2
-#define VH_MSG_TYPE_VIDEO_STOP  3
+typedef enum vh_msg_type {
+    VH_MSG_TYPE_VIDEO_CODEC = 1,
+    VH_MSG_TYPE_VIDEO_DATA  = 2,
+    VH_MSG_TYPE_VIDEO_STOP  = 3,
+    VH_MSG_TYPE_VIDEO_NONE,
+} VH_MSG_T;
 
-typedef struct video_data_msg{
+typedef struct video_data_msg {
     void* packet;
     void* payload;
-}video_data_msg_t;
+} video_data_msg_t;
 
-extern int vh_init_handler_thread(void);
-extern int vh_send_message(void* msg, int message_type);
-#endif
+/*************************************************************
+ * @name Video Handler Module
+ *
+ *////@{
+/** @brief
+ *
+ *  @return ERROR_T
+ *
+ *  @note
+ */
+extern ERROR_T MODULE_VideoHandler_Init(void);
+
+/** @brief
+ *
+ *  @param msg
+ *  @param message_type
+ *
+ *  @return ERROR_T
+ *
+ *  @note
+ */
+extern ERROR_T MODULE_VideoHandler_SendMessage(void* msg, VH_MSG_T message_type);
+
+/*************************************************************@}*/
+#endif /* VIDEO_HANDLER */
+/**@}*/

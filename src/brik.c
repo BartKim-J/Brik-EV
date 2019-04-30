@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
     dh_display_clean();
 
     //init video thread
-    vh_init_handler_thread();
+    MODULE_VideoHandler_Init();
 
     //init socket and server thread
     sock_tcp = socket(AF_INET, SOCK_STREAM, 0);
