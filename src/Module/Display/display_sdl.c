@@ -1,13 +1,13 @@
 /**
- * @file display_handler.c
- * @author Bato
+ * @file display_sdl.c
+ * @author Ben
  * @date  7 Mar 2019
  * @brief
  */
 /* ******* INCLUDE ******* */
 #ifdef DISPLAY_TYPE_SDL
 #include "brik_api.h"
-#include "display_handler_sdl.h"
+#include "display_sdl.h"
 
 /* ******* STATIC DEFINE ******* */
 // How many frames time values to keep

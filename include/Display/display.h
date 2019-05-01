@@ -1,5 +1,5 @@
 /**
- * @file display_handler.h
+ * @file display.h
  * @author Ben
  * @date 4 Tue 2019
  * @brief

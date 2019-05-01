@@ -57,7 +57,10 @@ link_directories(/usr/local/lib /usr/lib)
 # Include - Local #
 include_directories(
     ${PRJ_INCLUDE_PATH}
-    ${PRJ_INCLUDE_PATH}/sys
+    ${PRJ_INCLUDE_PATH}/System
+    ${PRJ_INCLUDE_PATH}/Packet
+    ${PRJ_INCLUDE_PATH}/Display
+    ${PRJ_INCLUDE_PATH}/Video
 )
 
 # Source #
@@ -74,16 +77,16 @@ set(
         ${PRJ_SYSETM_PATH}/threadqueue.c
 
         # Packet #
-        ${PRJ_MODULE_PATH}/packet_handler.c
-        ${PRJ_MODULE_PATH}/connect_mgmt.c
+        ${PRJ_MODULE_PATH}/Packet/packet_handler.c
+        ${PRJ_MODULE_PATH}/Packet/connect_mgmt.c
 
         # Video #
-        ${PRJ_MODULE_PATH}/video_handler.c
+        ${PRJ_MODULE_PATH}/Video/video_handler.c
 
         # Display #
-        ${PRJ_MODULE_PATH}/display_handler.c
-        ${PRJ_MODULE_PATH}/display_handler_sdl.c
-        ${PRJ_MODULE_PATH}/display_handler_sdl2.c
+        ${PRJ_MODULE_PATH}/Display/display.c
+        ${PRJ_MODULE_PATH}/Display/display_sdl.c
+        ${PRJ_MODULE_PATH}/Display/display_sdl2.c
 )
 
 # Flags #

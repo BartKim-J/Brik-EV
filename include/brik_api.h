@@ -39,15 +39,16 @@
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
 
-/* *** SYSTEM *** */
-#include "sys/threadqueue.h"
-#include "packets.h"
-
+/* *** Brik *** */
 #include "brik_utils.h"
+
+/* *** System *** */
+#include "System/threadqueue.h"
 #include "error_handler.h"
 
-/* *** MODULE *** */
+/* *** Module *** */
 // Packet Handler
+#include "packets.h"
 #include "packet_handler.h"
 
 // Connection Manager
@@ -57,7 +58,7 @@
 #include "video_handler.h"
 
 // Display
-#include "display_handler.h"
+#include "display.h"
 
 
 

@@ -1,12 +1,12 @@
 /**
- * @file display_handler.c
- * @author Bato
+ * @file display_sdl2.c
+ * @author Ben
  * @date  7 Mar 2019
  * @brief
  */
 #ifdef DISPLAY_TYPE_SDL2
 #include "brik_api.h"
-#include "display_handler_sdl.h"
+#include "display_sdl.h"
 
 /* ******* STATIC DEFINE ******* */
 moduleImageViewer_t moduleImageViewer;
