@@ -94,11 +94,6 @@ ERROR_T MODULE_VideoHandler_Init(void)
 {
     ERROR_T ret = ERROR_OK;
 
-    // avcodec registration for video handler
-#ifndef __NEW_FFMPEG__
-    //avcodec_register_all();
-#endif
-
     // init data queue for the thread
     ret = thread_queue_init(&queue_vh);
     if(ret != ERROR_OK)
@@ -228,7 +223,7 @@ static ERROR_T sDecoder_sendPacket(AVPacketPacket* packet, void* payload)
     av_packet->pts = packet->avpacket.timestamp;
 
     ret = avcodec_send_packet(video_codec_context, av_packet);
-    if (ret < 0)
+    if (ret < ERROR_OK)
     {
         printf("INVAL %d, AGAIN %d, NOMEM %d, EOF %d\n",  AVERROR(EINVAL), AVERROR(EAGAIN), AVERROR(ENOMEM), AVERROR_EOF);
         printf("Error Sending a packet for decoding %d\n", ret);
@@ -553,17 +548,17 @@ static AVFrame* sOpenImage(const char *filename)
     bool            frameFinished = false;
 
     AVFormatContext *pFormatCtx;
-    int             i = 0;
 
     AVPacket        packet;
 
     AVCodecContext  *pCodecCtx = NULL;
     AVCodec         *pCodec    = NULL;
+
     AVFrame         *pFrame    = NULL;
     AVFrame         *retFrame  = NULL;
 
-    int             numBytes  = 0;
-    uint8_t         *buffer   = NULL;
+    int             size       = 0;
+    uint8_t         *frameData = NULL;
 
     pFormatCtx = avformat_alloc_context();
 
@@ -579,21 +574,11 @@ static AVFrame* sOpenImage(const char *filename)
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Couldn't find stream information");
     }
 
-    // Dump information about file onto standard error
-    av_dump_format(pFormatCtx, 0, filename, false);
-
-    // Find the first video stream
-    for(i = 0; i < pFormatCtx->nb_streams; i++)
+    /* select the video stream */
+    videoStream = av_find_best_stream(pFormatCtx, AVMEDIA_TYPE_VIDEO, -1, -1, &pCodec, 0);
+    if (videoStream < ERROR_OK)
     {
-        if(pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
-        {
-            videoStream = i;
-            break;
-        }
-    }
-    if(videoStream == ERROR_NOT_OK)
-    {
-        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Didn't find a video stream");
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Cannot find a video stream in the input file");
     }
 
 
@@ -614,25 +599,30 @@ static AVFrame* sOpenImage(const char *filename)
     }
 
     // Allocate video frame
-    pFrame = av_frame_alloc();
-    if(pFrame == NULL)
+    pFrame   = av_frame_alloc();
+    retFrame = av_frame_alloc();
+    if((pFrame == NULL) || (retFrame == NULL))
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to alloc frame memory.");
     }
 
-    // Allocate an AVFrame structure
-    retFrame = av_frame_alloc();
-    if(retFrame == NULL)
-    {
-        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to alloc frame memory.");
-    }
+    // Setup new frame info
+    retFrame->format = AV_PIX_FMT_YUV420P;
+    retFrame->width  = pCodecCtx->width;
+    retFrame->height = pCodecCtx->height;
 
     // Determine required buffer size and allocate buffer
-    numBytes = avpicture_get_size(AV_PIX_FMT_YUV420P, pCodecCtx->width, pCodecCtx->height);
-    buffer   = malloc(numBytes);
+    size        = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, pCodecCtx->width, pCodecCtx->height, 1);
+    frameData   = (uint8_t*)malloc(size);
 
     // Assign appropriate parts of buffer to image planes in pFrameRGB
-    avpicture_fill((AVPicture *)retFrame, buffer, AV_PIX_FMT_YUV420P, pCodecCtx->width, pCodecCtx->height);
+    av_image_fill_arrays(retFrame->data, \
+                         retFrame->linesize, \
+                         frameData,
+                         retFrame->format, \
+                         retFrame->width, \
+                         retFrame->height,\
+                         1);
 
     // Read frames
     while(av_read_frame(pFormatCtx, &packet) >= 0)
@@ -667,17 +657,14 @@ static AVFrame* sOpenImage(const char *filename)
                     }
                 }
 
-                sws_scale(img_convert_ctx, pFrame->data, pFrame->linesize, 0, pCodecCtx->height, retFrame->data, retFrame->linesize);
+                sws_scale(img_convert_ctx, (uint8_t const * const *)pFrame->data, pFrame->linesize, 0, \
+                                    retFrame->height, retFrame->data, retFrame->linesize);
             }
         }
 
         // Free the packet that was allocated by av_read_frame
-        av_free_packet(&packet);
+        av_packet_unref(&packet);
     }
-
-    retFrame->width     = pFrame->width;
-    retFrame->height    = pFrame->height;
-    retFrame->format    = AV_PIX_FMT_YUV420P;
 
     // Free the YUV frame
     av_free(pFrame);

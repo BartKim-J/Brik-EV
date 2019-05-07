@@ -30,7 +30,7 @@
 #include <pthread.h>
 #include <unistd.h>
 
-/* *** Renderer *** */
+/* *** SDL *** */
 #ifdef SDL2
 #include <SDL2/SDL.h>
 #else // SDL1
@@ -38,10 +38,14 @@
 #include <SDL/SDL_image.h>
 #endif
 
+/* *** AV Library *** */
 #include <libavutil/frame.h>
+#include <libavutil/imgutils.h>
+#include <libswscale/swscale.h>
+
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
+
 
 /* *** Brik *** */
 #include "brik_utils.h"
