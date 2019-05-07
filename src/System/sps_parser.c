@@ -1,6 +1,6 @@
 /**
  * @file sps_parser.c
- * @author Bato
+ * @author Ben
  * @date  23 April 2019
  * @brief
  *
@@ -8,37 +8,38 @@
  * @see http://www.stack.nl/~dimitri/doxygen/commands.html
  */
 /* ******* INCLUDE ******* */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include "brik_api.h"
 
-const unsigned char * m_pStart;
-unsigned short m_nLength;
-int m_nCurrentBit;
+/* ******* GLOBAL VARIABLE ******* */
+static const unsigned char * m_pStart;
+static unsigned short m_nLength;
+static int m_nCurrentBit;
 
-unsigned int ReadBit()
+unsigned int ReadBit(void)
 {
     assert(m_nCurrentBit <= m_nLength * 8);
     int nIndex = m_nCurrentBit / 8;
     int nOffset = m_nCurrentBit % 8 + 1;
 
-    m_nCurrentBit ++;
+    m_nCurrentBit++;
+
     return (m_pStart[nIndex] >> (8-nOffset)) & 0x01;
 }
 
 unsigned int ReadBits(int n)
 {
     int r = 0;
-    int i;
+    int i = 0;
+
     for (i = 0; i < n; i++)
     {
         r |= ( ReadBit() << ( n - i - 1 ) );
     }
+
     return r;
 }
 
-unsigned int ReadExponentialGolombCode()
+unsigned int ReadExponentialGolombCode(void)
 {
     int r = 0;
     int i = 0;
@@ -50,12 +51,14 @@ unsigned int ReadExponentialGolombCode()
 
     r = ReadBits(i);
     r += (1 << i) - 1;
+
     return r;
 }
 
-unsigned int ReadSE()
+unsigned int ReadSE(void)
 {
     int r = ReadExponentialGolombCode();
+
     if (r & 0x01)
     {
         r = (r+1)/2;
@@ -64,19 +67,20 @@ unsigned int ReadSE()
     {
         r = -(r/2);
     }
+
     return r;
 }
 
 void sps_parse(const unsigned char * pStart, unsigned short nLen, int32_t *frame_width, int32_t *frame_height)
 {
-    m_pStart = pStart;
-    m_nLength = nLen;
+    m_pStart      = pStart;
+    m_nLength     = nLen;
     m_nCurrentBit = 0;
 
-    int frame_crop_left_offset=0;
-    int frame_crop_right_offset=0;
-    int frame_crop_top_offset=0;
-    int frame_crop_bottom_offset=0;
+    int frame_crop_left_offset   =0;
+    int frame_crop_right_offset  =0;
+    int frame_crop_top_offset    =0;
+    int frame_crop_bottom_offset =0;
 
     int crop_unit_x = 0;
     int crop_unit_y = 0;
@@ -105,11 +109,17 @@ void sps_parse(const unsigned char * pStart, unsigned short nLen, int32_t *frame
         if( chroma_format_idc == 3 )
         {
             int residual_colour_transform_flag = ReadBit();
+            UNUSED(residual_colour_transform_flag);
         }
         int bit_depth_luma_minus8 = ReadExponentialGolombCode();
         int bit_depth_chroma_minus8 = ReadExponentialGolombCode();
         int qpprime_y_zero_transform_bypass_flag = ReadBit();
         int seq_scaling_matrix_present_flag = ReadBit();
+
+        UNUSED(bit_depth_luma_minus8);
+        UNUSED(bit_depth_chroma_minus8);
+        UNUSED(seq_scaling_matrix_present_flag);
+        UNUSED(qpprime_y_zero_transform_bypass_flag);
 
         if (seq_scaling_matrix_present_flag)
         {
@@ -192,7 +202,8 @@ void sps_parse(const unsigned char * pStart, unsigned short nLen, int32_t *frame
 
     int Width =  ((pic_width_in_mbs_minus1 +1)*16) - ((frame_crop_right_offset + frame_crop_left_offset) * crop_unit_x);
     int Height = ((2 - frame_mbs_only_flag) *  (pic_height_in_map_units_minus1 +1) * 16) - ((frame_crop_bottom_offset + frame_crop_top_offset)* crop_unit_y);
-    printf("\n\nSPS frame dimension: = %d x %d\n\n",Width,Height);
+
+    printf("\n\nSPS frame dimension: = %d x %d\n\n",Width, Height);
 
     *frame_width = Width;
     *frame_height = Height;

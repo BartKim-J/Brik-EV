@@ -23,10 +23,15 @@
 
 
 #ifndef bool
+
 typedef int bool;
 #define true 1
 #define false 0
 #endif/* bool */
+
+#ifndef UNUSED
+#define UNUSED(expr) do { (void)(expr); } while (0)
+#endif
 
 extern void sps_parse(const unsigned char * pStart, unsigned short nLen, int32_t *frame_width, int32_t *frame_height);
 

@@ -41,8 +41,8 @@ extern ERROR_T  MODULE_Display_Init(void);
 extern void     MODULE_Display_Init_Overlay(int width, int height, uint32_t src_format, uint32_t dst_format);
 
 extern void     MODULE_Display_Clean(void);
-extern int      MODULE_Display_Update(AVFrame* frame);
-extern int      MODULE_Display_Destroy(void);
+extern ERROR_T  MODULE_Display_Update(AVFrame* frame);
+extern ERROR_T  MODULE_Display_Destroy(void);
 
 #ifdef DISPLAY_TYPE_SDL
 extern float    MODULE_Display_FPS(void);

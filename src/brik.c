@@ -90,7 +90,7 @@ static ERROR_T sSocketListener_Init(void)
 
     // Init socket and server thread
     sock_tcp = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock_tcp == -1)
+    if (sock_tcp == ERROR_NOT_OK)
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to open receiver socket.");
     }
@@ -105,7 +105,7 @@ static ERROR_T sSocketListener_Init(void)
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to bind socket listener.");
     }
 
-    if (listen(sock_tcp, 30) == -1)
+    if (listen(sock_tcp, 30) == ERROR_NOT_OK)
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Listen Failed.");
     }
@@ -118,7 +118,7 @@ static ERROR_T sClientHandler(void)
     ERROR_T ret = ERROR_OK;
 
     int connection_client = 0;
-    int connection_count = 0;
+    int connection_count  = 0;
 
     unsigned int client_addr_size = 0;
 

@@ -9,6 +9,7 @@
  *
  */
 #ifdef DISPLAY_TYPE_FB
+/* ******* INCLUDE ******* */
 #include "brik_api.h"
 #include "display_handler.h"
 

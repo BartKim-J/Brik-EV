@@ -9,6 +9,7 @@
 #include "brik_api.h"
 #include "display_sdl.h"
 
+
 /* ******* STATIC DEFINE ******* */
 // How many frames time values to keep
 // The higher the value the smoother the result is...
@@ -25,7 +26,9 @@ static float    framespersecond;
 static moduleImageViewer_t moduleImageViewer = {NULL, NULL, NULL, {0,0,0,0}, 0, 0, 0, 0};
 
 /* ******* STATIC FUNCTIONS ******* */
-/* *** IMAGE *** */
+/* *** Image *** */
+
+/* *** Screen *** */
 static ERROR_T sScreenClean(moduleImageViewer_t* module);
 static ERROR_T sScreenUpdate(moduleImageViewer_t* module, AVFrame* av_frame);
 
@@ -40,33 +43,34 @@ static void sFPS_Update(void);
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 ERROR_T MODULE_Display_Init(void)
 {
-     ERROR_T ret = ERROR_OK;
+    ERROR_T ret = ERROR_OK;
 
-     const SDL_VideoInfo* info_display;
-     printf("MODULE INIT => Display handler.\n");
+    const SDL_VideoInfo* info_display;
+    printf("MODULE INIT => Display handler.\n");
 
-     if (SDL_WasInit(SDL_INIT_VIDEO))
-     {
-         printf("SDL Video already initialized\n");
-         return ERROR_OK;
-     }
+    if (SDL_WasInit(SDL_INIT_VIDEO))
+    {
+        printf("SDL Video already initialized\n");
+        return ERROR_OK;
+    }
 
-     /* SDL INIT */
-     ret = SDL_Init(SDL_INIT_VIDEO);
-     if (ret != 0)
-     {
-         printf("Unable to initialize SDL: %s", SDL_GetError());
-         exit(1);
-     }
-     info_display = SDL_GetVideoInfo();
+    /* SDL INIT */
+    ret = SDL_Init(SDL_INIT_VIDEO);
+    if(ret != ERROR_OK)
+    {
+        printf("Unable to initialize SDL: %s", SDL_GetError());
+        exit(1);
+    }
 
-     moduleImageViewer.screen_w = info_display->current_w;
-     moduleImageViewer.screen_h = info_display->current_h;
+    info_display = SDL_GetVideoInfo();
 
-     printf("screen resolution %d::%d\n", info_display->current_w, info_display->current_h);
+    moduleImageViewer.screen_w = info_display->current_w;
+    moduleImageViewer.screen_h = info_display->current_h;
 
-     /* Set Video Mode */
-     moduleImageViewer.screen = SDL_SetVideoMode(info_display->current_w, info_display->current_h,
+    printf("screen resolution %d::%d\n", info_display->current_w, info_display->current_h);
+
+    /* Set Video Mode */
+    moduleImageViewer.screen = SDL_SetVideoMode(info_display->current_w, info_display->current_h,
                                 32, SDL_FULLSCREEN | SDL_HWSURFACE);
     if(moduleImageViewer.screen == NULL)
     {
@@ -85,6 +89,8 @@ ERROR_T MODULE_Display_Init(void)
 
 void MODULE_Display_Init_Overlay(int width, int height, uint32_t format, uint32_t dstformat)
 {
+    MODULE_Display_Clean();
+
     printf("%s, video resolution, %d x %d\n", __FUNCTION__, width, height);
     if(moduleImageViewer.screen == NULL)
     {
@@ -156,27 +162,25 @@ void MODULE_Display_Clean(void)
     sScreenClean(&moduleImageViewer);
 }
 
-int MODULE_Display_Update(AVFrame* av_frame)
+ERROR_T MODULE_Display_Update(AVFrame* av_frame)
 {
     return sScreenUpdate(&moduleImageViewer, av_frame);
 }
 
 
-int MODULE_Display_Destroy(void)
+ERROR_T MODULE_Display_Destroy(void)
 {
     SDL_FreeYUVOverlay(moduleImageViewer.overlay);
     SDL_FreeSurface(moduleImageViewer.screen);
     SDL_Quit();
 
-    return 0;
+    return ERROR_OK;
 }
 
 float MODULE_Display_FPS(void)
 {
     return framespersecond;
 }
-
-
 
 /* * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * *
  *
@@ -187,7 +191,6 @@ static ERROR_T sScreenUpdate(moduleImageViewer_t* module, AVFrame* av_frame)
 {
     ERROR_T ret = ERROR_OK;
 
-    AVPicture pict;
     AVFrame frameTarget;
 
     SDL_Overlay* bitmap = module->overlay;
@@ -217,17 +220,6 @@ static ERROR_T sScreenUpdate(moduleImageViewer_t* module, AVFrame* av_frame)
 
 #endif
     SDL_UnlockYUVOverlay(bitmap);
-/*
-    rect.x = 0;
-    rect.y = 0;
-    #if 0
-    rect.w = av_frame->width;
-    rect.h = av_frame->height;
-    #else
-    rect.w = module->screen_w;
-    rect.h = module->screen_h;
-    #endif
-*/
 
     SDL_DisplayYUVOverlay(bitmap, &(module->rect_overlay_dst));
 

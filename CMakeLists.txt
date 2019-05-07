@@ -49,7 +49,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PRJ_BINARY_PATH}/lib)
 
 ################### Library & Source & Include Setting ###################
 # link library (-l)
-link_libraries(pthread avcodec avfilter avformat avutil swscale SDL m)
+link_libraries(pthread avcodec avfilter avformat avutil swscale SDL SDL_image m)
 
 # link library directory (-L)
 link_directories(/usr/local/lib /usr/lib)
@@ -151,7 +151,7 @@ add_custom_target(run
 
 add_custom_target(airplay
     sudo LD_LIBRARY_PATH=.:/home/brik/brik_ev_c/airplay_server/bin/lib/ 
-    /home/brik/brik_ev_c/airplay_server/bin/Airplay-ConnectivityForwarder -hqw 1920 -hqh 1080 -lqw 1280 -lqh 720
+    /home/brik/brik_ev_c/airplay_server/bin/Airplay-ConnectivityForwarder -hqw 1920 -hqh 1080 -lqw 640 -lqh 360
 )
 
 # install #

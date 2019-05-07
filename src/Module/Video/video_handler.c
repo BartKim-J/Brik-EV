@@ -19,6 +19,7 @@
 #define OPEN_OVERLAY_ON_KEY_FRAME
 
 /* ******* STATIC DEFINE ******* */
+/* *** FRAME *** */
 #define TARGET_MOBILE_FPS               30 // frame per second
 #define TARGET_DESKTOP_FPS              15
 
@@ -26,6 +27,12 @@
 
 #define TARGET_SKIP_FRAME_MAX            5
 #define TARGET_SKIP_FRAME_MAX_MOBILE     2
+
+/* *** IMAGES *** */
+#define UNALLOCATED_RESOLUTION           0
+#define UNALLOCATED_FORMAT               0
+
+#define IMAGE_BRIK_INTRO_PATH            "/brik/brik_ev_c/lib/images/Brik_intro.png"
 
 /* ******* CODEC ID ******* */
 #define AV_CODEC_ID_H264_RKMPP           "h264_rkmpp"
@@ -40,11 +47,15 @@ static THQ       queue_vh;
 
 /* *** FFMPEG *** */
 static AVCodecContext* video_codec_context    = NULL;
-static AVBSFContext* bitstream_filter_context = NULL;
 
 static enum AVPixelFormat hw_pix_fmt          = AV_PIX_FMT_DRM_PRIME;
 
 AVBufferRef *hw_device_ctx = NULL;
+
+/* *** IMAGES *** */
+static uint32_t prevFrame_Width  = UNALLOCATED_RESOLUTION;
+static uint32_t prevFrame_Height = UNALLOCATED_RESOLUTION;
+AVFrame* introImage = NULL;
 
 /* ******* STATIC FUNCTIONS ******* */
 /* *** FFMPEG DECODER & CONTEXT INIT *** */
@@ -55,6 +66,16 @@ static ERROR_T sVideoContext_Init(int width, int height, int framerate, void* ex
 static ERROR_T sDecoder_sendPacket(AVPacketPacket* packet, void* payload);
 static ERROR_T sDecoder_receiveFrame(AVFrame *frame, AVFrame *hw_frame);
 static ERROR_T sDecoder_updateOverlay(AVFrame *frame);
+
+/* *** FFMPEG IMAGE *** */
+static ERROR_T sDisplay_LoadImages(void);
+
+static ERROR_T sDisplay_IntroImage(void);
+
+static ERROR_T sDisplay_cleanImageCache(void);
+
+static AVFrame* sOpenImage(const char *filename);
+static ERROR_T  sSaveFrame(AVFrame *pFrame, int width, int height, int iFrame);
 
 /* *** FFMPEG HANDLE VIDEO MESSAGE *** */
 static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload);
@@ -77,6 +98,7 @@ ERROR_T MODULE_VideoHandler_Init(void)
 #ifndef __NEW_FFMPEG__
     //avcodec_register_all();
 #endif
+
     // init data queue for the thread
     ret = thread_queue_init(&queue_vh);
     if(ret != ERROR_OK)
@@ -107,6 +129,9 @@ static void* thread_VideoHandler(void *arg)
 
     video_data_msg_t* video_msg;
     SDL_Event event;
+
+    sDisplay_LoadImages();
+    sDisplay_IntroImage();
 
     while(true)
     {
@@ -145,15 +170,18 @@ static void* thread_VideoHandler(void *arg)
             /* We are only worried about SDL_KEYDOWN and SDL_KEYUP events */
             switch( event.type )
             {
-              case SDL_QUIT:
-                SDL_Quit();
-                break;
+                case SDL_QUIT:
+                    sDisplay_cleanImageCache();
+                    SDL_Quit();
+                    break;
 
-              default:
-                break;
+                default:
+                    break;
             }
         }
     }
+
+    return ERROR_OK;
 }
 
 
@@ -270,9 +298,6 @@ static ERROR_T sDecoder_updateOverlay(AVFrame *frame)
 {
     ERROR_T ret = ERROR_OK;
 
-    static uint32_t prevWidth  = 0;
-    static uint32_t prevHeight = 0;
-
     static uint32_t            fpd = 0;
     static uint32_t            fps = 0;
 
@@ -283,15 +308,15 @@ static ERROR_T sDecoder_updateOverlay(AVFrame *frame)
 #ifdef OPEN_OVERLAY_ON_KEY_FRAME
     if (frame->key_frame)
     {
-        if((prevWidth != frame->width) || (prevHeight != frame->height))
+        if((prevFrame_Width != frame->width) || (prevFrame_Height != frame->height))
         {
 #ifdef __RK_HW_DECODER__
             MODULE_Display_Init_Overlay(frame->width, frame->height, frame->format, 0);
 #else
             MODULE_Display_Init_Overlay(frame->width, frame->height, AV_PIX_FMT_YUV420P, 0);
 #endif
-            prevWidth  = frame->width;
-            prevHeight = frame->height;
+            prevFrame_Width  = frame->width;
+            prevFrame_Height = frame->height;
 
             skipCnt    = 0;
             skipFlag   = false;
@@ -342,7 +367,7 @@ static ERROR_T sDecoder_updateOverlay(AVFrame *frame)
     // Data Log
     ERROR_SystemLog("\n\n- - - - DECODER RECEIVE :: FRAME(DECODED) - - - -\n");
     printf("Pixel Format: [ %3d ] Key Frame: [ %d ] Resolution [ %dx%d ] preview Rsolution [ %dx%d ]\n", \
-            frame->format, frame->key_frame, frame->width, frame->height, prevWidth, prevHeight);
+            frame->format, frame->key_frame, frame->width, frame->height, prevFrame_Width, prevFrame_Height);
 
     printf("\n[%7d] frame(s) decoded\n", video_codec_context->frame_number);
     printf("\n[%3d]FPS\n", fps);
@@ -366,8 +391,6 @@ static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload)
     int32_t width_sps = 0;
     int32_t height_sps = 0;
 
-    int use_sps_resolution = 0;
-
     MODULE_Display_Clean();
 
     ERROR_SystemLog("\n\n- - - - PACKET RECIVE :: VIDEO(CODEC) - - - -\n\n");
@@ -390,7 +413,6 @@ static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload)
     if(width_sps != packet->video.width || height_sps != packet->video.height)
     {
         // Let's suppose extradata has correct data
-        use_sps_resolution = 1;
         printf("Frame dimension from PACKET_VIDEO_CODEC is different to dimensions from extradata\n");
         printf("packet: %d x %d, extradata(sps): %d x %d\n", packet->video.width, packet->video.height, width_sps, height_sps);
         printf("Using resulotion from SPS\n\n\n");
@@ -399,17 +421,6 @@ static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload)
 
     ERROR_SystemLog("\n\n- - - - - - - - - - - - - - - - \n");
 
-#ifndef OPEN_OVERLAY_ON_KEY_FRAME
-
-    if (use_sps_resolution == 1)
-    {
-        MODULE_Display_Init_Overlay(width_sps, height_sps, AV_PIX_FMT_YUV420P, 0);
-    }
-    else
-    {
-        MODULE_Display_Init_Overlay(packet->video.width, packet->video.height, AV_PIX_FMT_YUV420P, 0);
-    }
-#endif
     if (sDeCoder_Init(packet, payload, packet->hdr.payloadSize) < 0)
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to init video decoder.");
@@ -481,7 +492,11 @@ static ERROR_T handle_video_stop(void)
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize video queue.");
     }
 
-    MODULE_Display_Clean();
+    // Resolution Info Uninit
+    prevFrame_Width  = UNALLOCATED_RESOLUTION;
+    prevFrame_Height = UNALLOCATED_RESOLUTION;
+
+    sDisplay_IntroImage();
 
     return status;
 }
@@ -492,6 +507,223 @@ static ERROR_T handle_video_stop(void)
  *  Static Functions
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+static ERROR_T sDisplay_LoadImages(void)
+{
+    ERROR_T ret = ERROR_OK;
+
+    if(introImage == NULL)
+    {
+        introImage = sOpenImage(IMAGE_BRIK_INTRO_PATH);
+        if(introImage == NULL)
+        {
+            ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Couldn't open intro image file.");
+        }
+
+        sSaveFrame(introImage, introImage->width, introImage->height, 0);
+    }
+
+    return ret;
+}
+static ERROR_T sDisplay_IntroImage(void)
+{
+    ERROR_T ret = ERROR_OK;
+
+    MODULE_Display_Init_Overlay(introImage->width, introImage->height, introImage->format, 0);
+
+    ret = MODULE_Display_Update(introImage);
+
+    return ret;
+}
+
+static ERROR_T sDisplay_cleanImageCache(void)
+{
+    ERROR_T ret = ERROR_OK;
+
+    // intro Image
+    av_free(introImage);
+
+    // add.. other images
+
+    return ret;
+}
+
+static AVFrame* sOpenImage(const char *filename)
+{
+    ERROR_T         videoStream = ERROR_NOT_OK;
+    bool            frameFinished = false;
+
+    AVFormatContext *pFormatCtx;
+    int             i = 0;
+
+    AVPacket        packet;
+
+    AVCodecContext  *pCodecCtx = NULL;
+    AVCodec         *pCodec    = NULL;
+    AVFrame         *pFrame    = NULL;
+    AVFrame         *retFrame  = NULL;
+
+    int             numBytes  = 0;
+    uint8_t         *buffer   = NULL;
+
+    // Register all formats and codecs.
+    av_register_all();
+
+    pFormatCtx = avformat_alloc_context();
+
+    // Open video file
+    if(avformat_open_input(&pFormatCtx, filename, NULL, NULL)!=0)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Couldn't open file");
+    }
+
+    // Retrieve stream information
+    if(avformat_find_stream_info(pFormatCtx, NULL) < 0)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Couldn't find stream information");
+    }
+
+    // Dump information about file onto standard error
+    av_dump_format(pFormatCtx, 0, filename, false);
+
+    // Find the first video stream
+    for(i = 0; i < pFormatCtx->nb_streams; i++)
+    {
+        if(pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
+        {
+            videoStream = i;
+            break;
+        }
+    }
+    if(videoStream == ERROR_NOT_OK)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Didn't find a video stream");
+    }
+
+
+    // Get a pointer to the codec context for the video stream
+    pCodecCtx = pFormatCtx->streams[videoStream]->codec;
+
+    // Find the decoder for the video stream
+    pCodec = avcodec_find_decoder(pCodecCtx->codec_id);
+    if(pCodec == NULL)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Codec not found");
+    }
+
+    // Open codec
+    if(avcodec_open2(pCodecCtx, pCodec, NULL) < 0)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Founded a codec but Could not open.");
+    }
+
+    // Allocate video frame
+    pFrame = av_frame_alloc();
+    if(pFrame == NULL)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to alloc frame memory.");
+    }
+
+    // Allocate an AVFrame structure
+    retFrame = av_frame_alloc();
+    if(retFrame == NULL)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to alloc frame memory.");
+    }
+
+    // Determine required buffer size and allocate buffer
+    numBytes = avpicture_get_size(AV_PIX_FMT_YUV420P, pCodecCtx->width, pCodecCtx->height);
+    buffer   = malloc(numBytes);
+
+    // Assign appropriate parts of buffer to image planes in pFrameRGB
+    avpicture_fill((AVPicture *)retFrame, buffer, AV_PIX_FMT_YUV420P, pCodecCtx->width, pCodecCtx->height);
+
+    // Read frames
+    while(av_read_frame(pFormatCtx, &packet) >= 0)
+    {
+        // Is this a packet from the video stream?
+        if(packet.stream_index == videoStream)
+        {
+            // Decode video frame
+            avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &packet);
+
+            // Did we get a video frame?
+            if(frameFinished)
+            {
+                static struct SwsContext *img_convert_ctx;
+
+                // Convert the image into YUV format that SDL uses
+                if(img_convert_ctx == NULL)
+                {
+                    img_convert_ctx = sws_getContext(
+                                            pCodecCtx->width,
+                                            pCodecCtx->height,
+                                            pCodecCtx->pix_fmt,
+                                            pCodecCtx->width,
+                                            pCodecCtx->height,
+                                            AV_PIX_FMT_YUV420P,
+                                            SWS_BICUBIC,
+                                            NULL, NULL, NULL);
+
+                    if(img_convert_ctx == NULL)
+                    {
+                        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"annot initialize the conversion context!");
+                    }
+                }
+
+                sws_scale(img_convert_ctx, pFrame->data, pFrame->linesize, 0, pCodecCtx->height, retFrame->data, retFrame->linesize);
+            }
+        }
+
+        // Free the packet that was allocated by av_read_frame
+        av_free_packet(&packet);
+    }
+
+    retFrame->width     = pFrame->width;
+    retFrame->height    = pFrame->height;
+    retFrame->format    = AV_PIX_FMT_YUV420P;
+
+    // Free the YUV frame
+    av_free(pFrame);
+
+    // Close the codec
+    avcodec_close(pCodecCtx);
+
+    // Close the video file
+    avformat_close_input(&pFormatCtx);
+
+    return retFrame;
+}
+
+static ERROR_T sSaveFrame(AVFrame *pFrame, int width, int height, int iFrame)
+{
+    FILE *pFile = NULL;
+    int  y = 0;
+
+    char szFilename[32] = {0, };
+
+
+    // Open file
+    sprintf(szFilename, "frame%d.ppm", iFrame);
+    pFile = fopen(szFilename, "wb");
+    if(pFile == NULL)
+    {
+        return ERROR_NOT_OK;
+    }
+
+    // Write header
+    fprintf(pFile, "P6\n%d %d\n255\n", width, height);
+
+    // Write pixel data
+    for(y = 0; y < height; y++)
+    {
+        fwrite(pFrame->data[0] + y * pFrame->linesize[0], 1, width * 3, pFile);
+    }
+
+    // Close file
+    fclose(pFile);
+
+    return ERROR_OK;
+}
 
 static ERROR_T sVideoContext_Init(int width, int height, int framerate, void* extradata, int extra_len)
 {
@@ -499,10 +731,6 @@ static ERROR_T sVideoContext_Init(int width, int height, int framerate, void* ex
 
     AVCodec        *codec = NULL;
     AVCodecContext *ctx;
-    AVBSFContext   *annexb;
-
-    const AVBitStreamFilter *bsf;
-    enum AVHWDeviceType hw_type;
 
     av_log_set_level(AV_LOG_DEBUG);
 
@@ -535,30 +763,6 @@ static ERROR_T sVideoContext_Init(int width, int height, int framerate, void* ex
         ctx->extradata_size = extra_len;
     }
 
-#if 0
-    hw_type = av_hwdevice_find_type_by_name("drm"); ///dev/dri/card0
-    if (hw_type == AV_HWDEVICE_TYPE_NONE)
-    {
-        fprintf(stderr, "Device type is not supported.\n");
-        fprintf(stderr, "Available device types:");
-        while((hw_type = av_hwdevice_iterate_types(hw_type)) != AV_HWDEVICE_TYPE_NONE)
-            fprintf(stderr, " %s", av_hwdevice_get_type_name(hw_type));
-        fprintf(stderr, "\n");
-        return ERROR_NOT_OK;
-    }
-
-    ctx->get_format  = get_hw_format;
-
-    if ((ret = av_hwdevice_ctx_create(&hw_device_ctx, hw_type, NULL, NULL, 0)) < 0)
-    {
-        fprintf(stderr, "Failed to create specified HW device.\n");
-        return ret;
-    }
-
-    ctx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
-
-#endif
-
     // Open
     if (avcodec_open2(ctx, codec, NULL) < 0)
     {
@@ -569,35 +773,6 @@ static ERROR_T sVideoContext_Init(int width, int height, int framerate, void* ex
         return ERROR_NOT_OK;
     }
 
-#if 0 //def __RK_HW_DECODER__
-    bsf = av_bsf_get_by_name("h264_mp4toannexb");
-
-    if (annexb == NULL)
-    {
-        av_log(NULL, AV_LOG_ERROR, "Failed to get bsf.");
-        return -1;
-    }
-
-    if ((ret = av_bsf_alloc(bsf, &annexb)) < 0)
-    {
-        return ret;
-    }
-
-    if ((ret = avcodec_parameters_from_context(annexb->par_in, ctx)) < 0)
-    {
-        return ret;
-    }
-
-    ret = av_bsf_init(annexb);
-
-    if (ret < 0)
-    {
-        return ret;
-    }
-
-    bitstream_filter_context = annexb;
-
-#endif
     video_codec_context = ctx;
 
     avcodec_flush_buffers(ctx);
@@ -605,17 +780,3 @@ static ERROR_T sVideoContext_Init(int width, int height, int framerate, void* ex
     return ret;
 }
 
-static enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *pix_fmts)
-{
-    const enum AVPixelFormat *p;
-
-    for (p = pix_fmts; *p != -1; p++)
-    {
-        if(*p == hw_pix_fmt)
-            return *p;
-    }
-
-    fprintf(stderr, "Failed to get HW surface format.\n");
-
-    return AV_PIX_FMT_NONE;
-}

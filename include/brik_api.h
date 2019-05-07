@@ -14,6 +14,9 @@
 /* *** Standard *** */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <errno.h>
 
 /* *** Linux System *** */
 #include <sys/socket.h>
@@ -24,19 +27,19 @@
 #include <netinet/ip.h>
 
 #include <pthread.h>
-#include <string.h>
 #include <unistd.h>
-#include <errno.h>
 
 /* *** Renderer *** */
 #ifdef SDL2
 #include <SDL2/SDL.h>
 #else // SDL1
 #include <SDL/SDL.h>
+#include <SDL/SDL_image.h>
 #endif
 
 #include <libavutil/frame.h>
 #include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 
 /* *** Brik *** */
