@@ -6,6 +6,8 @@
  *
  * @see http://www.stack.nl/~dimitri/doxygen/docblocks.html
  * @see http://www.stack.nl/~dimitri/doxygen/commands.html
+ *
+ * @TODO code refactoring.
  */
 /* ******* INCLUDE ******* */
 #include "brik_api.h"
@@ -77,10 +79,10 @@ void sps_parse(const unsigned char * pStart, unsigned short nLen, int32_t *frame
     m_nLength     = nLen;
     m_nCurrentBit = 0;
 
-    int frame_crop_left_offset   =0;
-    int frame_crop_right_offset  =0;
-    int frame_crop_top_offset    =0;
-    int frame_crop_bottom_offset =0;
+    int frame_crop_left_offset   = 0;
+    int frame_crop_right_offset  = 0;
+    int frame_crop_top_offset    = 0;
+    int frame_crop_bottom_offset = 0;
 
     int crop_unit_x = 0;
     int crop_unit_y = 0;
@@ -98,48 +100,61 @@ void sps_parse(const unsigned char * pStart, unsigned short nLen, int32_t *frame
     int level_idc = ReadBits(8);
     int seq_parameter_set_id = ReadExponentialGolombCode();
 
+    UNUSED(constraint_set0_flag);
+    UNUSED(constraint_set1_flag);
+    UNUSED(constraint_set2_flag);
+    UNUSED(constraint_set3_flag);
+    UNUSED(constraint_set4_flag);
+    UNUSED(constraint_set5_flag);
+    UNUSED(reserved_zero_2bits);
+    UNUSED(level_idc);
+    UNUSED(seq_parameter_set_id);
 
     if( profile_idc == 100 || profile_idc == 110 ||
         profile_idc == 122 || profile_idc == 244 ||
-        profile_idc == 44 || profile_idc == 83 ||
-        profile_idc == 86 || profile_idc == 118 )
+        profile_idc == 44  || profile_idc == 83  ||
+        profile_idc == 86  || profile_idc == 118    )
     {
         chroma_format_idc = ReadExponentialGolombCode();
 
-        if( chroma_format_idc == 3 )
+        if(chroma_format_idc == 3)
         {
             int residual_colour_transform_flag = ReadBit();
             UNUSED(residual_colour_transform_flag);
         }
+
         int bit_depth_luma_minus8 = ReadExponentialGolombCode();
         int bit_depth_chroma_minus8 = ReadExponentialGolombCode();
         int qpprime_y_zero_transform_bypass_flag = ReadBit();
         int seq_scaling_matrix_present_flag = ReadBit();
-
         UNUSED(bit_depth_luma_minus8);
         UNUSED(bit_depth_chroma_minus8);
         UNUSED(seq_scaling_matrix_present_flag);
         UNUSED(qpprime_y_zero_transform_bypass_flag);
 
-        if (seq_scaling_matrix_present_flag)
+        if(seq_scaling_matrix_present_flag)
         {
-            int i=0;
-            for ( i = 0; i < 8; i++)
+            int i =0 ;
+            for(i = 0; i < 8; i++)
             {
                 int seq_scaling_list_present_flag = ReadBit();
+                UNUSED(seq_scaling_list_present_flag);
+
                 if (seq_scaling_list_present_flag)
                 {
                     int sizeOfScalingList = (i < 6) ? 16 : 64;
                     int lastScale = 8;
                     int nextScale = 8;
                     int j=0;
-                    for ( j = 0; j < sizeOfScalingList; j++)
+
+                    for(j = 0; j < sizeOfScalingList; j++)
                     {
-                        if (nextScale != 0)
+                        if(nextScale != 0)
                         {
                             int delta_scale = ReadSE();
                             nextScale = (lastScale + delta_scale + 256) % 256;
                         }
+
                         lastScale = (nextScale == 0) ? lastScale : nextScale;
                     }
                 }
@@ -149,9 +164,13 @@ void sps_parse(const unsigned char * pStart, unsigned short nLen, int32_t *frame
 
     int log2_max_frame_num_minus4 = ReadExponentialGolombCode();
     int pic_order_cnt_type = ReadExponentialGolombCode();
+    UNUSED(log2_max_frame_num_minus4);
+    UNUSED(pic_order_cnt_type);
+
     if( pic_order_cnt_type == 0 )
     {
         int log2_max_pic_order_cnt_lsb_minus4 = ReadExponentialGolombCode();
+        UNUSED(log2_max_pic_order_cnt_lsb_minus4);
     }
     else if( pic_order_cnt_type == 1 )
     {
@@ -159,7 +178,12 @@ void sps_parse(const unsigned char * pStart, unsigned short nLen, int32_t *frame
         int offset_for_non_ref_pic = ReadSE();
         int offset_for_top_to_bottom_field = ReadSE();
         int num_ref_frames_in_pic_order_cnt_cycle = ReadExponentialGolombCode();
-        int i;
+        UNUSED(delta_pic_order_always_zero_flag);
+        UNUSED(offset_for_non_ref_pic);
+        UNUSED(offset_for_top_to_bottom_field);
+        UNUSED(num_ref_frames_in_pic_order_cnt_cycle);
+
+        int i = 0;
         for( i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; i++ )
         {
             ReadSE();
@@ -171,12 +195,23 @@ void sps_parse(const unsigned char * pStart, unsigned short nLen, int32_t *frame
     int pic_width_in_mbs_minus1 = ReadExponentialGolombCode();
     int pic_height_in_map_units_minus1 = ReadExponentialGolombCode();
     int frame_mbs_only_flag = ReadBit();
+    UNUSED(max_num_ref_frames);
+    UNUSED(gaps_in_frame_num_value_allowed_flag);
+    UNUSED(pic_width_in_mbs_minus1);
+    UNUSED(pic_height_in_map_units_minus1);
+    UNUSED(frame_mbs_only_flag);
+
     if( !frame_mbs_only_flag )
     {
         int mb_adaptive_frame_field_flag = ReadBit();
+        UNUSED(mb_adaptive_frame_field_flag);
     }
+
     int direct_8x8_inference_flag = ReadBit();
     int frame_cropping_flag = ReadBit();
+    UNUSED(direct_8x8_inference_flag);
+    UNUSED(frame_cropping_flag);
+
     if( frame_cropping_flag )
     {
         frame_crop_left_offset = ReadExponentialGolombCode();
@@ -197,7 +232,10 @@ void sps_parse(const unsigned char * pStart, unsigned short nLen, int32_t *frame
             crop_unit_y = sub_height_c * ( 2 - frame_mbs_only_flag );
         }
     }
+
     int vui_parameters_present_flag = ReadBit();
+    UNUSED(vui_parameters_present_flag);
+
     pStart++;
 
     int Width =  ((pic_width_in_mbs_minus1 +1)*16) - ((frame_crop_right_offset + frame_crop_left_offset) * crop_unit_x);

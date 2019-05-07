@@ -16,8 +16,8 @@
 /* ******* GLOBAL VARIABLE ******* */
 
 /* ******* STATIC FUNCTIONS ******* */
-static void sDebugging(void);
-static void sReboot(void);
+//static void sDebugging(void);
+//static void sReboot(void);
 static void sExit(void);
 
 void ERROR_SystemLog(const char* message)
@@ -36,6 +36,7 @@ inline void ERROR_StatusCheck_Inline(BRIK_STATUS errorStatus, const char* errorM
     }
 }
 
+/*
 static void sDebugging(void)
 {
     while(true);
@@ -43,16 +44,13 @@ static void sDebugging(void)
 
 static void sReboot(void)
 {
-    /*
-    SN_SYS_ERROR_SystemLog("System Reboot. \n\n");
 
-    sync();
-    reboot(RB_AUTOBOOT);
-    */
+    ERROR_SystemLog("System Reboot. \n\n");
+
     sExit();
 }
-
+*/
 static void sExit(void)
 {
-    exit(-1);
+    exit(ERROR_NOT_OK);
 }

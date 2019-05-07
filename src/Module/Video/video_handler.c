@@ -565,9 +565,6 @@ static AVFrame* sOpenImage(const char *filename)
     int             numBytes  = 0;
     uint8_t         *buffer   = NULL;
 
-    // Register all formats and codecs.
-    av_register_all();
-
     pFormatCtx = avformat_alloc_context();
 
     // Open video file

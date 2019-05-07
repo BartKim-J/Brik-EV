@@ -19,6 +19,7 @@
 #include <errno.h>
 
 /* *** Linux System *** */
+#include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 
