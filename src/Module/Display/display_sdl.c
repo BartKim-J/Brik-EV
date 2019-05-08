@@ -14,7 +14,7 @@
 // How many frames time values to keep
 // The higher the value the smoother the result is...
 // Don't make it 0 or less :)
-#define FRAME_VALUES 10
+#define FRAME_VALUES 5
 
 /* ******* GLOBAL VARIABLE ******* */
 static uint32_t frametimes[FRAME_VALUES]; // An array to store frame times:
@@ -87,15 +87,22 @@ ERROR_T MODULE_Display_Init(void)
     return ret;
 }
 
-void MODULE_Display_Init_Overlay(int width, int height, uint32_t format, uint32_t dstformat)
+ERROR_T MODULE_Display_Init_Overlay(int width, int height, uint32_t format, uint32_t dstformat)
 {
+    ERROR_T ret = ERROR_OK;
+
     MODULE_Display_Clean();
 
-    printf("%s, video resolution, %d x %d\n", __FUNCTION__, width, height);
+    if(width == 0 || height == 0)
+    {
+        return ERROR_NOT_OK;
+    }
+
+    printf("%s, Screen Overlay Init, %d x %d\n", __FUNCTION__, width, height, format);
+
     if(moduleImageViewer.screen == NULL)
     {
-        printf("video screen is not initialized\n");
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"video screen is not initialized.");
     }
 
     if(moduleImageViewer.overlay != NULL)
@@ -115,7 +122,7 @@ void MODULE_Display_Init_Overlay(int width, int height, uint32_t format, uint32_
     if(moduleImageViewer.overlay == NULL)
     {
         printf("Failed to allocate video overlay: %s\n", SDL_GetError());
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate video overlay.");
     }
 
     //init scaler
@@ -125,8 +132,8 @@ void MODULE_Display_Init_Overlay(int width, int height, uint32_t format, uint32_
                                                width,
                                                height,
                                                AV_PIX_FMT_YUV420P,
-                                               //SWS_BILINEAR,
-                                               SWS_FAST_BILINEAR,
+                                               SWS_BILINEAR,
+                                               //SWS_FAST_BILINEAR,
                                                NULL,
                                                NULL,
                                                NULL
@@ -134,8 +141,8 @@ void MODULE_Display_Init_Overlay(int width, int height, uint32_t format, uint32_
 
     if(moduleImageViewer.sws_ctx == NULL)
     {
-       printf("Failed to allocate Video Scaler: %s\n", SDL_GetError());
-       exit(1);
+        printf("Failed to allocate Video Scaler: %s\n", SDL_GetError());
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate Video Scaler.");
     }
 
     // calculate overlay ratio, pos & size
@@ -155,6 +162,8 @@ void MODULE_Display_Init_Overlay(int width, int height, uint32_t format, uint32_
     }
 
     printf("overlay dimension calculated: %d x %d\n\n", moduleImageViewer.rect_overlay_dst.w, moduleImageViewer.rect_overlay_dst.h);
+
+    return ret;
 }
 
 void MODULE_Display_Clean(void)

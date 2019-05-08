@@ -44,6 +44,14 @@ extern ERROR_T MODULE_VideoHandler_Init(void);
 
 /** @brief
  *
+ *  @return ERROR_T
+ *
+ *  @note
+ */
+extern ERROR_T MODULE_VideoHandler_Destroy(void);
+
+/** @brief
+ *
  *  @param msg
  *  @param message_type
  *

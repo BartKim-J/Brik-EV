@@ -1,6 +1,6 @@
 /**
  * @file packet_handler.h
- * @author Lex
+ * @author Ben
  * @date
  * @brief
  *
@@ -11,6 +11,19 @@
 #ifndef __PACKET_HANDLER_H_
 #define __PACKET_HANDLER_H_
 
-extern int ph_init_handler_thread(int index, int socket_fd);
+/*************************************************************
+ * @name Packet Handler Module
+ *
+ *////@{
+/** @brief
+ *
+ *  @return ERROR_T
+ *
+ *  @note
+ */
+extern ERROR_T MODULE_PacketHandler_Init(int index, int socket_fd);
 
+extern ERROR_T MODULE_PacketHandler_Destroy(void);
+
+/*************************************************************@}*/
 #endif

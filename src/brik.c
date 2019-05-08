@@ -126,7 +126,7 @@ static ERROR_T sClientHandler(void)
     client_addr_size = sizeof(client_addr);
     connection_client = accept(sock_tcp, (struct sockaddr *)&client_addr, &client_addr_size);
 
-    if (connection_client == ERROR_NOT_OK)
+    if(connection_client == ERROR_NOT_OK)
     {
         close(connection_client);
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Connection Failed.");
@@ -135,7 +135,7 @@ static ERROR_T sClientHandler(void)
     {
         printf("info_connection: count %d, new connection %d\n", connection_count, connection_client);
         // open handler thread for packet deliverey
-        if(ph_init_handler_thread(connection_count, connection_client) == ERROR_NOT_OK)
+        if(MODULE_PacketHandler_Init(connection_count, connection_client) == ERROR_NOT_OK)
         {
             printf("Failed to create packet handler %d\n", connection_count);
             return ERROR_NOT_OK;

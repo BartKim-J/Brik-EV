@@ -23,10 +23,9 @@
 #define TARGET_MOBILE_FPS               30 // frame per second
 #define TARGET_DESKTOP_FPS              15
 
-#define TARGET_FPD                      10
+#define TARGET_FPD                       5
 
-#define TARGET_SKIP_FRAME_MAX            5
-#define TARGET_SKIP_FRAME_MAX_MOBILE     2
+#define TARGET_SKIP_FRAME_MAX            3
 
 /* *** IMAGES *** */
 #define UNALLOCATED_RESOLUTION           0
@@ -59,7 +58,7 @@ AVFrame* introImage = NULL;
 
 /* ******* STATIC FUNCTIONS ******* */
 /* *** FFMPEG DECODER & CONTEXT INIT *** */
-static ERROR_T sDeCoder_Init(CodecDataPacket* data, void* extradata, int extra_len);
+static ERROR_T sDecoder_Init(CodecDataPacket* data, void* extradata, int extra_len);
 static ERROR_T sVideoContext_Init(int width, int height, int framerate, void* extradata, int extra_len);
 
 /* *** FFMPEG DECODE FRAME( WITH OVERLAY UPDATE ) *** */
@@ -105,6 +104,24 @@ ERROR_T MODULE_VideoHandler_Init(void)
 
     return ret;
 }
+ERROR_T MODULE_VideoHandler_Destroy(void)
+{
+    ERROR_T ret = ERROR_OK;
+
+    thread_queue_cleanup(&queue_vh, true);
+    if(ret != ERROR_OK)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize video queue.");
+    }
+
+    pthread_exit(&thread_vh);
+
+    // Resolution Info Uninit
+    prevFrame_Width  = UNALLOCATED_RESOLUTION;
+    prevFrame_Height = UNALLOCATED_RESOLUTION;
+
+    return ret;
+}
 
 ERROR_T MODULE_VideoHandler_SendMessage(void* msg, VH_MSG_T message_type)
 {
@@ -118,7 +135,8 @@ ERROR_T MODULE_VideoHandler_SendMessage(void* msg, VH_MSG_T message_type)
  * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * */
 static void* thread_VideoHandler(void *arg)
 {
-    ERROR_T ret_queue = 0;
+    ERROR_T ret_queue = ERROR_OK;
+    ERROR_T ret       = ERROR_OK;
 
     struct threadmsg message;
 
@@ -143,15 +161,23 @@ static void* thread_VideoHandler(void *arg)
         // identify the type of packet if codec -> handle extradata and (re)init video decoder
         if (message.msgtype == VH_MSG_TYPE_VIDEO_CODEC)
         {
+            handle_video_stop();
+            MODULE_Display_Clean();
+
             handle_video_codec(video_msg->packet, video_msg->payload);
         }
         else if (message.msgtype == VH_MSG_TYPE_VIDEO_DATA)
         {
-            handle_video_data(video_msg->packet, video_msg->payload);
+            ret = handle_video_data(video_msg->packet, video_msg->payload);
+            if(ret < ERROR_NOT_OK)
+            {
+                //ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to processing video data.");
+            }
         }
         else if (message.msgtype == VH_MSG_TYPE_VIDEO_STOP)
         {
             handle_video_stop();
+            sDisplay_IntroImage();
         }
         else
         {
@@ -185,7 +211,7 @@ static void* thread_VideoHandler(void *arg)
  *  Decoder Functions
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-static ERROR_T sDeCoder_Init(CodecDataPacket* packet, void* extradata, int extra_len)
+static ERROR_T sDecoder_Init(CodecDataPacket* packet, void* extradata, int extra_len)
 {
     if (video_codec_context != NULL)
     {
@@ -212,7 +238,7 @@ static ERROR_T sDecoder_sendPacket(AVPacketPacket* packet, void* payload)
 
     ret = av_packet_from_data(av_packet, payload, packet->hdr.payloadSize);
     {
-        if (ret < 0)
+        if (ret < ERROR_OK)
         {
             printf("Error setting data to a packet %d\n", ret);
 
@@ -262,7 +288,8 @@ static ERROR_T sDecoder_receiveFrame(AVFrame *frame, AVFrame *hw_frame)
         }
         else if (ret < 0)
         {
-            ERROR_StatusCheck(BRIK_STATUS_DECODE_ERROR, "Error during decoding");
+            // during dcoding Skipping.
+            //ERROR_StatusCheck(BRIK_STATUS_DECODE_ERROR, "Error during decoding");
         }
 
         if (frame->format == hw_pix_fmt)
@@ -300,6 +327,11 @@ static ERROR_T sDecoder_updateOverlay(AVFrame *frame)
     static uint32_t       skipCnt  = 0;
     static uint32_t       skipMax  = 0;
 
+    if((frame->width) == 0 || (frame->height == 0))
+    {
+        return ERROR_NOT_OK;
+    }
+
 #ifdef OPEN_OVERLAY_ON_KEY_FRAME
     if (frame->key_frame)
     {
@@ -323,15 +355,10 @@ static ERROR_T sDecoder_updateOverlay(AVFrame *frame)
     // fps control.
     if(fpd > TARGET_FPD) // if delayed FPD.
     {
-        if(frame->width < frame->height) // and when resolution is Mobile size.
-        {
-            skipMax = TARGET_SKIP_FRAME_MAX_MOBILE;
-        }
-        else // and when resolution is Desktop size
-        {
-            // max_skip frame is TARGET_SKIP_FRAME_MAX.
-            skipMax = ((fpd / 5) <= TARGET_SKIP_FRAME_MAX) ? (fpd / 5): TARGET_SKIP_FRAME_MAX;
-        }
+
+        // max_skip frame is TARGET_SKIP_FRAME_MAX.
+        skipMax = ((fpd / TARGET_SKIP_FRAME_MAX) <= TARGET_SKIP_FRAME_MAX) ? (fpd / 1): TARGET_SKIP_FRAME_MAX;
+
 
         if(!skipFlag)
         {
@@ -416,7 +443,7 @@ static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload)
 
     ERROR_SystemLog("\n\n- - - - - - - - - - - - - - - - \n");
 
-    if (sDeCoder_Init(packet, payload, packet->hdr.payloadSize) < 0)
+    if (sDecoder_Init(packet, payload, packet->hdr.payloadSize) < 0)
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to init video decoder.");
     }
@@ -458,9 +485,8 @@ static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload)
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate frame.");
     }
 
-    ret = sDecoder_sendPacket(packet, payload);
-
-    ret = sDecoder_receiveFrame(frame, hw_frame);
+    sDecoder_sendPacket(packet, payload);
+    sDecoder_receiveFrame(frame, hw_frame);
 
     av_frame_free(&hw_frame);
     av_frame_free(&frame);
@@ -491,8 +517,6 @@ static ERROR_T handle_video_stop(void)
     prevFrame_Width  = UNALLOCATED_RESOLUTION;
     prevFrame_Height = UNALLOCATED_RESOLUTION;
 
-    sDisplay_IntroImage();
-
     return status;
 }
 
@@ -506,6 +530,7 @@ static ERROR_T sDisplay_LoadImages(void)
 {
     ERROR_T ret = ERROR_OK;
 
+    // Intro Image
     if(introImage == NULL)
     {
         introImage = sOpenImage(IMAGE_BRIK_INTRO_PATH);
@@ -517,11 +542,15 @@ static ERROR_T sDisplay_LoadImages(void)
         sSaveFrame(introImage, introImage->width, introImage->height, 0);
     }
 
+    // Other Image
+
     return ret;
 }
 static ERROR_T sDisplay_IntroImage(void)
 {
     ERROR_T ret = ERROR_OK;
+
+    MODULE_Display_Clean();
 
     MODULE_Display_Init_Overlay(introImage->width, introImage->height, introImage->format, 0);
 
@@ -537,7 +566,7 @@ static ERROR_T sDisplay_cleanImageCache(void)
     // intro Image
     av_free(introImage);
 
-    // add.. other images
+    // other images..
 
     return ret;
 }
@@ -547,18 +576,18 @@ static AVFrame* sOpenImage(const char *filename)
     ERROR_T         videoStream = ERROR_NOT_OK;
     bool            frameFinished = false;
 
-    AVFormatContext *pFormatCtx;
+    AVFormatContext *pFormatCtx;       // open file info
 
-    AVPacket        packet;
+    AVPacket        packet;            // encoded packet from open file
 
-    AVCodecContext  *pCodecCtx = NULL;
-    AVCodec         *pCodec    = NULL;
+    AVCodecContext  *pCodecCtx = NULL; // decoder info
+    AVCodec         *pCodec    = NULL; // codec
 
-    AVFrame         *pFrame    = NULL;
-    AVFrame         *retFrame  = NULL;
+    AVFrame         *pFrame    = NULL; // open file frame
+    AVFrame         *retFrame  = NULL; // return frame
 
-    int             size       = 0;
-    uint8_t         *frameData = NULL;
+    int             size       = 0;    // frame buffer size
+    uint8_t         *frameData = NULL; // frame buffer
 
     pFormatCtx = avformat_alloc_context();
 
@@ -758,6 +787,8 @@ static ERROR_T sVideoContext_Init(int width, int height, int framerate, void* ex
     }
 
     video_codec_context = ctx;
+
+    av_opt_set();
 
     avcodec_flush_buffers(ctx);
 

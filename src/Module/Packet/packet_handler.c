@@ -40,13 +40,39 @@ static void packet_video_data(int connection_client, void* packet, void* payload
 static pthread_t p_threads[MAX_CONNECTION];
 static int connection_fd[MAX_CONNECTION];
 
-int ph_init_handler_thread(int index, int socket_fd)
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *  Extern Functions
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+ERROR_T MODULE_PacketHandler_Init(int index, int socket_fd)
 {
-    int thread_id = -1;
+    ERROR_T ret = ERROR_NOT_OK;
 
-    connection_fd[index] = socket_fd;
-    thread_id = pthread_create(&p_threads[index], NULL, ph_thread_packet_handler, (void*)&connection_fd[index]);
-    return thread_id;
+    if((index < MAX_CONNECTION) || (socket_fd < MAX_CONNECTION))
+    {
+        connection_fd[index] = socket_fd;
+        ret = pthread_create(&p_threads[index], NULL, ph_thread_packet_handler, (void*)&connection_fd[index]);
+    }
+    else
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Packet Handler Array Over Index.");
+    }
+
+    return ret;
+}
+
+ERROR_T MODULE_PacketHandler_Destroy(void)
+{
+    ERROR_T ret = ERROR_OK;
+    int i = 0;
+
+    for(i = 0; i < MAX_CONNECTION; i++)
+    {
+
+    }
+
+    return ret;
 }
 
 static void packet_cmd_connect(int connection_client, void* packet)
@@ -185,8 +211,7 @@ static void packet_cmd_disconnect(int connection_client, void* packet)
     message = malloc(sizeof(video_data_msg_t));
     if (message == NULL)
     {
-        printf("Failed to allocate video handler message: VH_MSG_TYPE_VIDEO_STOP\n");
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_UNKNOWN_MESSAGE ,"Failed to allocate video handler message: VH_MSG_TYPE_VIDEO_STOP.");
     }
 
     printf("sending video stop message = %p, extradata = %p\n", message->packet, message->payload);
@@ -400,16 +425,14 @@ static void packet_video_codec(int connection_client, void* packet, void* payloa
     codec_packet = malloc(sizeof(CodecDataPacket));
     if (codec_packet == NULL)
     {
-        printf("Failed to allocate codec packet\n");
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate codec packet.");
     }
     memcpy(codec_packet, received_codec_packet, sizeof(CodecDataPacket));
 
     extradata = malloc(received_codec_packet->hdr.payloadSize);
     if (extradata == NULL)
     {
-        printf("Failed to allocate extradata to pass\n");
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate extradata to pass.");
     }
     memcpy(extradata, payload, received_codec_packet->hdr.payloadSize);
 
@@ -429,8 +452,7 @@ static void packet_video_codec(int connection_client, void* packet, void* payloa
     message = malloc(sizeof(video_data_msg_t));
     if (message == NULL)
     {
-        printf("Failed to allocate video handler message\n");
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate video handler message.");
     }
 
     message->packet = codec_packet;
@@ -442,7 +464,6 @@ static void packet_video_codec(int connection_client, void* packet, void* payloa
     {
         printf("Error while sending video_codec message to video handler: %d\n", msg_ret);
     }
-
 }
 
 static void packet_video_data(int connection_client, void* packet, void* payload)
@@ -466,24 +487,21 @@ static void packet_video_data(int connection_client, void* packet, void* payload
     video_packet = malloc(sizeof(AVPacketPacket));
     if (video_packet == NULL)
     {
-        printf("Failed to allocate AVPacket video packet\n");
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate AVPacket video packet.");
     }
     memcpy(video_packet, received_video_data, sizeof(AVPacketPacket));
 
     framedata = malloc(received_video_data->hdr.payloadSize);
     if (framedata == NULL)
     {
-        printf("Failed to allocate frame data\n");
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate frame data.");
     }
     memcpy(framedata, payload, received_video_data->hdr.payloadSize);
 
     message = malloc(sizeof(video_data_msg_t));
     if (message == NULL)
     {
-        printf("Failed to allocate video handler message\n");
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate video handler message.");
     }
 
     message->packet = video_packet;
@@ -590,8 +608,7 @@ static void* ph_thread_packet_handler(void *arg)
             received_payload = (char*)malloc(payload_length);
             if (received_payload == NULL)
             {
-                printf("Failed to allocate payload buffer\n");
-                exit(1);
+                ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate payload buffer.");
             }
 
             received_payload_len = 0;
