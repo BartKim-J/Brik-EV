@@ -137,11 +137,13 @@ static void* thread_VideoHandler(void *arg)
 {
     ERROR_T ret_queue = ERROR_OK;
     ERROR_T ret       = ERROR_OK;
+    static bool    isConnected = false;
 
     struct threadmsg message;
 
-    video_data_msg_t* video_msg;
+    video_data_msg_t* video_msg = NULL;
     SDL_Event event;
+
 
     sDisplay_LoadImages();
     sDisplay_IntroImage();
@@ -159,29 +161,36 @@ static void* thread_VideoHandler(void *arg)
         video_msg = (video_data_msg_t*)(message.data);
 
         // identify the type of packet if codec -> handle extradata and (re)init video decoder
-        if (message.msgtype == VH_MSG_TYPE_VIDEO_CODEC)
+        switch(message.msgtype)
         {
-            handle_video_stop();
-            MODULE_Display_Clean();
+            case VH_MSG_TYPE_VIDEO_CODEC:
+                handle_video_codec(video_msg->packet, video_msg->payload);
+                break;
 
-            handle_video_codec(video_msg->packet, video_msg->payload);
-        }
-        else if (message.msgtype == VH_MSG_TYPE_VIDEO_DATA)
-        {
-            ret = handle_video_data(video_msg->packet, video_msg->payload);
-            if(ret < ERROR_NOT_OK)
-            {
-                //ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to processing video data.");
-            }
-        }
-        else if (message.msgtype == VH_MSG_TYPE_VIDEO_STOP)
-        {
-            handle_video_stop();
-            sDisplay_IntroImage();
-        }
-        else
-        {
-            ERROR_StatusCheck(BRIK_STATUS_UNKNOWN_MESSAGE ,"Invalid video pakcet.");
+            case VH_MSG_TYPE_VIDEO_DATA:
+                handle_video_data(video_msg->packet, video_msg->payload);
+                break;
+
+            case VH_MSG_TYPE_VIDEO_CONNECT:
+                if(isConnected)
+                {
+                    handle_video_stop();
+                }
+                else
+                {
+                    isConnected = true;
+                }
+                break;
+
+            case VH_MSG_TYPE_VIDEO_DISCONNECT:
+                isConnected = false;
+                handle_video_stop();
+                sDisplay_IntroImage();
+                break;
+
+            default:
+                ERROR_StatusCheck(BRIK_STATUS_UNKNOWN_MESSAGE ,"Invalid video pakcet.");
+                break;
         }
 
         free(video_msg);
@@ -289,7 +298,7 @@ static ERROR_T sDecoder_receiveFrame(AVFrame *frame, AVFrame *hw_frame)
         else if (ret < 0)
         {
             // during dcoding Skipping.
-            //ERROR_StatusCheck(BRIK_STATUS_DECODE_ERROR, "Error during decoding");
+            ERROR_StatusCheck(BRIK_STATUS_DECODE_ERROR, "Error during decoding");
         }
 
         if (frame->format == hw_pix_fmt)
@@ -486,6 +495,7 @@ static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload)
     }
 
     sDecoder_sendPacket(packet, payload);
+
     sDecoder_receiveFrame(frame, hw_frame);
 
     av_frame_free(&hw_frame);
@@ -539,7 +549,7 @@ static ERROR_T sDisplay_LoadImages(void)
             ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Couldn't open intro image file.");
         }
 
-        sSaveFrame(introImage, introImage->width, introImage->height, 0);
+        //sSaveFrame(introImage, introImage->width, introImage->height, 0);
     }
 
     // Other Image

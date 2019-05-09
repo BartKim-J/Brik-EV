@@ -19,9 +19,10 @@
 #define __VIDEO_HANDLER_H_
 
 typedef enum vh_msg_type {
-    VH_MSG_TYPE_VIDEO_CODEC = 1,
-    VH_MSG_TYPE_VIDEO_DATA  = 2,
-    VH_MSG_TYPE_VIDEO_STOP  = 3,
+    VH_MSG_TYPE_VIDEO_CODEC      = 1,
+    VH_MSG_TYPE_VIDEO_DATA       = 2,
+    VH_MSG_TYPE_VIDEO_CONNECT    = 3,
+    VH_MSG_TYPE_VIDEO_DISCONNECT = 4,
     VH_MSG_TYPE_VIDEO_NONE,
 } VH_MSG_T;
 

@@ -11,13 +11,20 @@
 /* ******* INCLUDE ******* */
 #include "brik_api.h"
 
-//functions
+/* ******* GLOBAL VARIABLE ******* */
+
+static pthread_t p_threads[MAX_CONNECTION];
+static int connection_fd[MAX_CONNECTION];
+
+/* ******* STATIC FUNCTIONS ******* */
+/* *** Handler  *** */
 static void* ph_thread_packet_handler(void* arg);
 static void handle_cmd_packet(int connection_client, void* packet, void* payload);
 static void handle_video_packet(int connection_client, void* packet, void* payload);
 static void handle_audio_packet(int connection_client, void* packet, void* payload);
 static void handle_backchannel_packet(int connection_client, void* packet, void* payload);
 
+/* *** Packet Commands *** */
 static void packet_cmd_connect(int connection_client, void* packet);
 static void packet_cmd_disconnect(int connection_client, void* packet);
 static void packet_cmd_pause(int connection_client, void* packet);
@@ -33,12 +40,9 @@ static void packet_cmd_checkconn(int connection_client, void* packet);
 static void packet_cmd_winstate(int connection_client, void* packet);
 static void packet_cmd_win_notify(int connection_client, void* packet);
 
+/* *** Packet Payload *** */
 static void packet_video_codec(int connection_client, void* packet, void* payload);
 static void packet_video_data(int connection_client, void* packet, void* payload);
-
-//variables
-static pthread_t p_threads[MAX_CONNECTION];
-static int connection_fd[MAX_CONNECTION];
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
@@ -81,6 +85,8 @@ static void packet_cmd_connect(int connection_client, void* packet)
     int32_t session_id;             //param[1]
     CommandPacket* received_packet;
     CommandPacket response_packet;
+    video_data_msg_t * message;
+    int msg_ret = 0;
     int32_t result = 0;
     int send_len = 0;
 
@@ -98,10 +104,9 @@ static void packet_cmd_connect(int connection_client, void* packet)
     response_packet.param[0] = connection_type;
     response_packet.param[1] = session_id;
 
-    printf("connection_type: 0x%08x, session_id: 0x%08x\n", connection_type, session_id);
+    printf("connection_client 0x%08x, connection_type: 0x%08x, session_id: 0x%08x\n", connection_client, connection_type, session_id);
 
-    // manage connection
-    if (cm_get_connection_count() < MAX_CONNECTION)
+    if(cm_get_connection_count() < MAX_CONNECTION)
     {        // identify connection type
         switch(connection_type)
         {
@@ -175,6 +180,21 @@ static void packet_cmd_connect(int connection_client, void* packet)
     {
         printf("%d bytes packet PACKET_CMD_CONNECT_RESP sent to connection %d\n", send_len, connection_client);
     }
+
+    message = malloc(sizeof(video_data_msg_t));
+    if (message == NULL)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_UNKNOWN_MESSAGE ,"Failed to allocate video handler message: VH_MSG_TYPE_VIDEO_STOP.");
+    }
+
+    printf("sending video stop message = %p, extradata = %p\n", message->packet, message->payload);
+    msg_ret = MODULE_VideoHandler_SendMessage((void*)message, VH_MSG_TYPE_VIDEO_CONNECT);
+    if(msg_ret != ERROR_OK)
+    {
+        printf("Error while sending video stop message to video handler: %d\n", msg_ret);
+    }
+
+    usleep(500000);
 }
 
 static void packet_cmd_disconnect(int connection_client, void* packet)
@@ -193,7 +213,7 @@ static void packet_cmd_disconnect(int connection_client, void* packet)
 
     send_len = send(connection_client, (void*)&response_packet, sizeof(response_packet), 0);
 
-    if (send_len <= 0)
+    if (send_len <= ERROR_OK)
     {
         printf("Connection %d had been disconnected from the remote host\n", connection_client);
         cm_close_current_connection(connection_client);
@@ -211,12 +231,12 @@ static void packet_cmd_disconnect(int connection_client, void* packet)
     message = malloc(sizeof(video_data_msg_t));
     if (message == NULL)
     {
-        ERROR_StatusCheck(BRIK_STATUS_UNKNOWN_MESSAGE ,"Failed to allocate video handler message: VH_MSG_TYPE_VIDEO_STOP.");
+        ERROR_StatusCheck(BRIK_STATUS_UNKNOWN_MESSAGE ,"Failed to allocate video handler message: VH_MSG_TYPE_VIDEO_DISCONNECT.");
     }
 
     printf("sending video stop message = %p, extradata = %p\n", message->packet, message->payload);
-    msg_ret = MODULE_VideoHandler_SendMessage((void*)message, VH_MSG_TYPE_VIDEO_STOP);
-    if(msg_ret != 0)
+    msg_ret = MODULE_VideoHandler_SendMessage((void*)message, VH_MSG_TYPE_VIDEO_DISCONNECT );
+    if(msg_ret != ERROR_OK)
     {
         printf("Error while sending video stop message to video handler: %d\n", msg_ret);
     }
@@ -460,7 +480,7 @@ static void packet_video_codec(int connection_client, void* packet, void* payloa
 
     printf("sending video codec codec_packet = %p, extradata = %p\n", codec_packet, extradata);
     msg_ret = MODULE_VideoHandler_SendMessage((void*)message, VH_MSG_TYPE_VIDEO_CODEC);
-    if(msg_ret != 0)
+    if(msg_ret != ERROR_OK)
     {
         printf("Error while sending video_codec message to video handler: %d\n", msg_ret);
     }
@@ -509,7 +529,7 @@ static void packet_video_data(int connection_client, void* packet, void* payload
 
     //printf("sending video data message packet = %p, payload = %p\n", video_packet, framedata);
     msg_ret = MODULE_VideoHandler_SendMessage((void*)message, VH_MSG_TYPE_VIDEO_DATA);
-    if(msg_ret != 0)
+    if(msg_ret != ERROR_OK)
     {
         printf("Error while sending video_codec message to video handler: %d\n", msg_ret);
     }
@@ -592,17 +612,17 @@ static void* ph_thread_packet_handler(void *arg)
         packet_type = received_packet->hdr.type;
         payload_length = received_packet->hdr.payloadSize;
 
-        if (((packet_type & PACKET_TYPE_CMD_MASK) != PACKET_TYPE_CMD_VALUE) &&
-            ((packet_type & PACKET_TYPE_VIDEO_MASK) != PACKET_TYPE_VIDEO_VALUE) &&
-            ((packet_type & PACKET_TYPE_AUDIO_MASK) != PACKET_TYPE_AUDIO_VALUE) &&
-            ((packet_type & PACKET_TYPE_BACKCHANNEL_MASK) != PACKET_TYPE_BACKCHANNEL_VALUE))
+        if(((packet_type & PACKET_TYPE_CMD_MASK)   != PACKET_TYPE_CMD_VALUE) &&
+           ((packet_type & PACKET_TYPE_VIDEO_MASK) != PACKET_TYPE_VIDEO_VALUE) &&
+           ((packet_type & PACKET_TYPE_AUDIO_MASK) != PACKET_TYPE_AUDIO_VALUE) &&
+           ((packet_type & PACKET_TYPE_BACKCHANNEL_MASK) != PACKET_TYPE_BACKCHANNEL_VALUE))
         {
             printf("Invalid packet type 0x%08x had been received\n", packet_type);
             // in some cases
             continue;
         }
 
-        if (payload_length > 0)
+        if(payload_length > 0)
         {
             //collect payload
             received_payload = (char*)malloc(payload_length);
@@ -630,19 +650,19 @@ static void* ph_thread_packet_handler(void *arg)
             }
         }
 
-        if ((packet_type & PACKET_TYPE_CMD_MASK) == PACKET_TYPE_CMD_VALUE)
+        if((packet_type & PACKET_TYPE_CMD_MASK) == PACKET_TYPE_CMD_VALUE)
         {
             handle_cmd_packet(connection_client, received_packet, received_payload);
         }
-        else if ((packet_type & PACKET_TYPE_VIDEO_MASK) == PACKET_TYPE_VIDEO_VALUE)
+        else if((packet_type & PACKET_TYPE_VIDEO_MASK) == PACKET_TYPE_VIDEO_VALUE)
         {
             handle_video_packet(connection_client, received_packet, received_payload);
         }
-        else if ((packet_type & PACKET_TYPE_AUDIO_MASK) == PACKET_TYPE_AUDIO_VALUE)
+        else if((packet_type & PACKET_TYPE_AUDIO_MASK) == PACKET_TYPE_AUDIO_VALUE)
         {
             handle_audio_packet(connection_client, received_packet, received_payload);
         }
-        else if ((packet_type & PACKET_TYPE_BACKCHANNEL_MASK) == PACKET_TYPE_BACKCHANNEL_VALUE)
+        else if((packet_type & PACKET_TYPE_BACKCHANNEL_MASK) == PACKET_TYPE_BACKCHANNEL_VALUE)
         {
             handle_backchannel_packet(connection_client, received_packet, received_payload);
         }

@@ -98,7 +98,7 @@ ERROR_T MODULE_Display_Init_Overlay(int width, int height, uint32_t format, uint
         return ERROR_NOT_OK;
     }
 
-    printf("%s, Screen Overlay Init, %d x %d\n", __FUNCTION__, width, height, format);
+    printf("%s, Screen Overlay Init, %d x %d, format %d\n", __FUNCTION__, width, height, format);
 
     if(moduleImageViewer.screen == NULL)
     {

@@ -11,7 +11,7 @@
 #ifndef __CONNECT_MGMT_H_
 #define __CONNECT_MGMT_H_
 
-#define MAX_CONNECTION  8
+#define MAX_CONNECTION  32
 
 extern int cm_get_connection_count();
 extern int cm_add_new_connection(int32_t connection, int32_t connection_type, int32_t session_id);

@@ -31,7 +31,7 @@ int cm_add_new_connection(int connection, int32_t connection_type, int32_t sessi
 {
     int i = 0;
 
-    for(i = 0; i< MAX_CONNECTION; i++)
+    for(i = 0; i < MAX_CONNECTION; i++)
     {
         if (conn_status[i].is_occupied == 0)
         {
