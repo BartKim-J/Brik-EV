@@ -10,6 +10,7 @@
  */
 /* ******* INCLUDE ******* */
 #include "brik_api.h"
+#include <sys/reboot.h>
 
 /* ******* STATIC DEFINE ******* */
 
@@ -66,16 +67,24 @@ static void sReboot(void)
 {
     ERROR_T ret = ERROR_OK;
 
-    ret = sDestoryModuels();
-
-    ret = sInitModules();
-
     ERROR_SystemLog("Brik Reboot. \n\n");
+
+    ret = sDestoryModuels();
+    if(ret != ERROR_OK)
+    {
+        ret = sInitModules();
+    }
+
+    ERROR_SystemLog("Brik Start. \n\n");
 
     if(ret != ERROR_OK)
     {
+        ERROR_SystemLog("Brik Reboot Failed. \n\n");
         ERROR_SystemLog("System Reboot. \n\n");
-        sExit();
+
+        sync();
+
+        reboot(RB_AUTOBOOT);
     }
 }
 
@@ -108,13 +117,13 @@ static ERROR_T sInitModules(void)
     ret = MODULE_Display_Init();
     if (ret != ERROR_OK)
     {
-        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to Initialize Display.");
+        return ret;
     }
 
     ret = MODULE_VideoHandler_Init();
     if (ret != ERROR_OK)
     {
-        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to Initialize Video Handler.");
+        return ret;
     }
 
     return ret;
@@ -127,13 +136,13 @@ static ERROR_T sDestoryModuels(void)
     ret = MODULE_Display_Destroy();
     if (ret != ERROR_OK)
     {
-        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to Destroy Display.");
+        return ret;
     }
 
     ret = MODULE_VideoHandler_Destroy();
     if (ret != ERROR_OK)
     {
-        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to Destroy Video Handler.");
+        return ret;
     }
 
     return ret;

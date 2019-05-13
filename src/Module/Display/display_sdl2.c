@@ -37,7 +37,7 @@ static int update_frame(moduleImageViewer_t* module, AVFrame* av_frame);
     if(ret != 0)
     {
         SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED, "Not Initialized params.");
     }
 
     /* GET DISPLAY INFO */
@@ -61,14 +61,12 @@ static int update_frame(moduleImageViewer_t* module, AVFrame* av_frame);
          );
 
      if (!moduleImageViewer.window) {
-         printf("SDL: could not create window - exiting\n");
-         exit(1);
+         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED, "SDL: could not create window - exiting.");
      }
 
      moduleImageViewer.renderer = SDL_CreateRenderer(moduleImageViewer.window, -1, 0);
      if (!moduleImageViewer.renderer) {
-         printf("SDL: could not create renderer - exiting\n");
-         exit(1);
+         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED, "SDL: could not create renderer - exiting.");
      }
      /* IMAGE INIT */
      clean_window(&moduleImageViewer);
@@ -82,8 +80,7 @@ static int update_frame(moduleImageViewer_t* module, AVFrame* av_frame);
      );
 
      if (!moduleImageViewer.texture) {
-         printf("SDL: could not create texture - exiting\n");
-         exit(1);
+         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED, "SDL: could not create texture - exiting.");
      }
 
      /* Clean Before Window Screen */
@@ -136,8 +133,7 @@ static int update_frame(moduleImageViewer_t* module, AVFrame* av_frame)
     ret = SDL_RenderCopy(module->renderer, module->texture, NULL, &module->dest_rect);
     if(!ret)
     {
-        printf("Get error while copying texture to renderer\n");
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED, "Get error while copying texture to renderer.");
     }
 
     SDL_RenderPresent(module->renderer);
@@ -155,8 +151,7 @@ static int clean_window(moduleImageViewer_t* module)
     error += SDL_SetRenderDrawColor(module->renderer, 0, 0, 0, 255);
     if(!error)
     {
-        printf("Get error from renderer while clearing\n\n");
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED, "Get error from renderer while clearing.");
     }
 
     SDL_RenderPresent(module->renderer);
@@ -182,8 +177,7 @@ static int update_texture(moduleImageViewer_t* module, AVFrame* av_frame)
     /* Update Texture*/
     if(module->texture == NULL)
     {
-        printf("Unable to find the texture to update");
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED, "Unable to find the texture to update.");
     }
 /*
     SDL_UpdateYUVTexture(

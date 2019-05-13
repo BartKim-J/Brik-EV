@@ -59,7 +59,7 @@ ERROR_T MODULE_Display_Init(void)
     if(ret != ERROR_OK)
     {
         printf("Unable to initialize SDL: %s", SDL_GetError());
-        exit(1);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED, "Not Initialized params.");
     }
 
     info_display = SDL_GetVideoInfo();
