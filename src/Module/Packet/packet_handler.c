@@ -11,6 +11,12 @@
 /* ******* INCLUDE ******* */
 #include "brik_api.h"
 
+/* ******* STATIC DEFINE ******* */
+typedef struct connection_info {
+
+
+} connection_info_t;
+
 /* ******* GLOBAL VARIABLE ******* */
 
 static pthread_t p_threads[MAX_CONNECTION];
@@ -97,7 +103,7 @@ static void packet_cmd_connect(int connection_client, void* packet)
     received_packet = (CommandPacket*)packet;
 
     connection_type = received_packet->param[0];
-    session_id = received_packet->param[1];
+    session_id      = received_packet->param[1];
 
     response_packet.hdr.type = PACKET_CMD_CONNECT_RESP;
     response_packet.hdr.payloadSize = 0;
@@ -113,7 +119,7 @@ static void packet_cmd_connect(int connection_client, void* packet)
             case CONNECTION_TYPE_CONTROL:
                 printf("Control Connection request received from connection %d\n", connection_client);
                 result = cm_add_new_connection(connection_client, connection_type, session_id);
-                if (result != 0)
+                if (result != ERROR_OK)
                 {
                     printf("Failed to establish control connection(maximum exceed)\n");
                 }
@@ -123,7 +129,7 @@ static void packet_cmd_connect(int connection_client, void* packet)
                 printf("Video Connection request received from connection %d\n", connection_client);
                 //TODO: initialize video data queue
                 result = cm_add_new_connection(connection_client, connection_type, session_id);
-                if (result != 0)
+                if (result != ERROR_OK)
                 {
                     printf("Failed to establish video connection(maximum exceed)\n");
                 }
@@ -133,7 +139,7 @@ static void packet_cmd_connect(int connection_client, void* packet)
                 printf("Audio Connection request received from connection %d\n", connection_client);
                 //TODO: initialize video data queue
                 result = cm_add_new_connection(connection_client, connection_type, session_id);
-                if (result != 0)
+                if (result != ERROR_OK)
                 {
                     printf("Failed to establish audio connection(maximum exceed)\n");
                 }
@@ -143,11 +149,11 @@ static void packet_cmd_connect(int connection_client, void* packet)
                 printf("Audio Connection request received from connection %d\n", connection_client);
                 //TODO: initialize video data queue
                 result = cm_add_new_connection(connection_client, connection_type, session_id);
-                if (result != 0)
+                if (result != ERROR_OK)
                 {
                     printf("Failed to establish backchannel connection(maximum exceed)\n");
                 }
-                result = 0;
+                result = ERROR_OK;
                 break;
             default:
                 printf("Invalid connection type 0x%8x\n", connection_type);
@@ -161,7 +167,7 @@ static void packet_cmd_connect(int connection_client, void* packet)
         result = 1;
     }
 
-    if (result == 0)
+    if (result == ERROR_OK)
     {
         // TODO: check if dead connection
         // dead connection: same connection type is remained on different connection
@@ -171,7 +177,7 @@ static void packet_cmd_connect(int connection_client, void* packet)
     response_packet.param[2] = result;
     send_len = send(connection_client, (void*)&response_packet, sizeof(response_packet), 0);
 
-    if (send_len < 0)
+    if (send_len < ERROR_OK)
     {
         printf("Socket %d had been disconnected from the remote host\n", connection_client);
         cm_close_current_connection(connection_client);

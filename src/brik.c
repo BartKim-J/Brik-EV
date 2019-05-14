@@ -117,8 +117,8 @@ static ERROR_T sClientHandler(void)
 {
     ERROR_T ret = ERROR_OK;
 
-    int connection_client = 0;
-    int connection_count  = 0;
+    int        connection_client = 0;
+    static int connection_count  = 0;
 
     unsigned int client_addr_size = 0;
 
