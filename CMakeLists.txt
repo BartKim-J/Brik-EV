@@ -145,7 +145,7 @@ add_custom_target(gdb
 )
 
 add_custom_target(run
-    make all &&
+    #make all &&
     sudo sh ${PRJ_SHELL_PATH}/run.sh
 )
 
