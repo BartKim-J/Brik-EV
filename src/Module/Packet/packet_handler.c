@@ -21,6 +21,7 @@ typedef struct connection_info {
 
 static pthread_t p_threads[MAX_CONNECTION];
 static int connection_fd[MAX_CONNECTION];
+static bool connectionFlag = false;
 
 /* ******* STATIC FUNCTIONS ******* */
 /* *** Handler  *** */
@@ -59,15 +60,8 @@ ERROR_T MODULE_PacketHandler_Init(int index, int socket_fd)
 {
     ERROR_T ret = ERROR_NOT_OK;
 
-    if((index < MAX_CONNECTION) || (socket_fd < MAX_CONNECTION))
-    {
-        connection_fd[index] = socket_fd;
-        ret = pthread_create(&p_threads[index], NULL, ph_thread_packet_handler, (void*)&connection_fd[index]);
-    }
-    else
-    {
-        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Packet Handler Array Over Index.");
-    }
+    connection_fd[index] = socket_fd;
+    ret = pthread_create(&p_threads[index], NULL, ph_thread_packet_handler, (void*)&connection_fd[index]);
 
     return ret;
 }
@@ -112,7 +106,7 @@ static void packet_cmd_connect(int connection_client, void* packet)
 
     printf("connection_client 0x%08x, connection_type: 0x%08x, session_id: 0x%08x\n", connection_client, connection_type, session_id);
 
-    if(cm_get_connection_count() < MAX_CONNECTION)
+    if((cm_get_connection_count() < MAX_CONNECTION) && (connectionFlag == false))
     {        // identify connection type
         switch(connection_type)
         {
@@ -126,6 +120,9 @@ static void packet_cmd_connect(int connection_client, void* packet)
                 break;
 
             case CONNECTION_TYPE_VIDEO:
+
+                connectionFlag = true; // DEBUG
+
                 printf("Video Connection request received from connection %d\n", connection_client);
                 //TODO: initialize video data queue
                 result = cm_add_new_connection(connection_client, connection_type, session_id);
@@ -239,6 +236,8 @@ static void packet_cmd_disconnect(int connection_client, void* packet)
     {
         ERROR_StatusCheck(BRIK_STATUS_UNKNOWN_MESSAGE ,"Failed to allocate video handler message: VH_MSG_TYPE_VIDEO_DISCONNECT.");
     }
+
+    connectionFlag = false; // DEBUG
 
     printf("sending video stop message = %p, extradata = %p\n", message->packet, message->payload);
     msg_ret = MODULE_VideoHandler_SendMessage((void*)message, VH_MSG_TYPE_VIDEO_DISCONNECT );

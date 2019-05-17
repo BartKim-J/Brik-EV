@@ -137,7 +137,6 @@ static void* thread_VideoHandler(void *arg)
 {
     ERROR_T ret_queue = ERROR_OK;
     ERROR_T ret       = ERROR_OK;
-    static bool    isConnected = false;
 
     struct threadmsg message;
 
@@ -172,18 +171,9 @@ static void* thread_VideoHandler(void *arg)
                 break;
 
             case VH_MSG_TYPE_VIDEO_CONNECT:
-                if(isConnected)
-                {
-                    handle_video_stop();
-                }
-                else
-                {
-                    isConnected = true;
-                }
                 break;
 
             case VH_MSG_TYPE_VIDEO_DISCONNECT:
-                isConnected = false;
                 handle_video_stop();
                 sDisplay_IntroImage();
                 break;

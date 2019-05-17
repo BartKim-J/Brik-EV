@@ -119,8 +119,8 @@ static ERROR_T sClientHandler(void)
 {
     ERROR_T ret = ERROR_OK;
 
-    int        connection_client = 0;
-    static int connection_count  = 0;
+    int connection_client = 0;
+    int connection_count  = 0;
 
     unsigned int client_addr_size = 0;
 
@@ -142,6 +142,7 @@ static ERROR_T sClientHandler(void)
             printf("Failed to create packet handler %d\n", connection_count);
             return ERROR_NOT_OK;
         }
+
         connection_count++;
     }
 
