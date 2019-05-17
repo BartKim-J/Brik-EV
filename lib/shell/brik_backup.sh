@@ -9,14 +9,6 @@ DST=/media/BRIK_USB/Workspace/Brik/backup
 DATE="$(date +%m%d)"
 TIME="$(date +%H%M%S)"
 
-sudo fdisk -l
-read -p"dst disk : "  DST_DISK
-
-echo ${DST_DISK}
-
-echo "Mount USB Disk to /mnt directory."
-sudo mount ${DST_DISK} /mnt
-
 sudo mkdir -p ${DST}
 
 echo "Backup Start. $(date +%H%M%S)"
