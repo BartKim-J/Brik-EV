@@ -37,6 +37,8 @@ int main(int argc, char* argv[])
 
     ret = sModules_Init();
 
+    ERROR_SystemLog("\n\n Brik Start. \n");
+
     while(true)
     {
         ret = sClientHandler();

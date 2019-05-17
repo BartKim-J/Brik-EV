@@ -157,14 +157,14 @@ static void packet_cmd_connect(int connection_client, void* packet)
                 break;
             default:
                 printf("Invalid connection type 0x%8x\n", connection_type);
-                result = 1;
+                result = ERROR_NOT_OK;
                 break;
         }
     }
     else
     {
         printf("Maximum connection exceed!\n");
-        result = 1;
+        result = ERROR_NOT_OK;
     }
 
     if (result == ERROR_OK)

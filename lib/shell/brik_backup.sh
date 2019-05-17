@@ -5,7 +5,7 @@ VERSION_MINOR=0
 echo "Brik Back Script ( $VERSION_MAJOR.$VERSION_MINOR )"
 
 SRC=/
-DST=/mnt/Workspace/Brik/backup
+DST=/media/BRIK_USB/Workspace/Brik/backup
 DATE="$(date +%m%d)"
 TIME="$(date +%H%M%S)"
 

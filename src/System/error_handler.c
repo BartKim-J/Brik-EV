@@ -70,12 +70,10 @@ static void sReboot(void)
     ERROR_SystemLog("Brik Reboot. \n\n");
 
     ret = sDestoryModuels();
-    if(ret != ERROR_OK)
+    if(ret == ERROR_OK)
     {
         ret = sInitModules();
     }
-
-    ERROR_SystemLog("Brik Start. \n\n");
 
     if(ret != ERROR_OK)
     {
@@ -86,6 +84,8 @@ static void sReboot(void)
 
         reboot(RB_AUTOBOOT);
     }
+
+    ERROR_SystemLog("Brik Restarted. \n\n");
 }
 
 static void sExit(void)
