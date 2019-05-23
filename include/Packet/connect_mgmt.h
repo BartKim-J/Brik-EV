@@ -13,9 +13,9 @@
 
 #define MAX_CONNECTION  8//CONTROL & VIDEO CHANNEL ( 2 CONNECTION = 1 SET )
 
-extern int cm_get_connection_count();
-extern int cm_add_new_connection(int32_t connection, int32_t connection_type, int32_t session_id);
-extern int cm_close_current_connection(int32_t connection);
-extern int cm_close_all_connections(void);
+extern int MODULE_ConnectManager_GetCount();
+extern int MODULE_ConnectManager_Open(int32_t connection, int32_t connection_type, int32_t session_id);
+extern int MODULE_ConnectManager_Close(int32_t connection);
+extern int MODULE_ConnectManager_CloseAll();
 
 #endif

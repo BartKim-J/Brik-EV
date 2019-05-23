@@ -98,11 +98,11 @@ static ERROR_T sSocketListener_Init(void)
     }
 
     memset(&sock_tcp_addr, 0, sizeof(sock_tcp_addr));
-    sock_tcp_addr.sin_family = AF_INET;
-    sock_tcp_addr.sin_port = htons(9500);
+    sock_tcp_addr.sin_family      = AF_INET;
+    sock_tcp_addr.sin_port        = htons(9500);
     sock_tcp_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    if (bind(sock_tcp, (struct sockaddr*)&sock_tcp_addr, sizeof(sock_tcp_addr)) == -1)
+    if (bind(sock_tcp, (struct sockaddr*)&sock_tcp_addr, sizeof(sock_tcp_addr)) == ERROR_NOT_OK)
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to bind socket listener.");
     }

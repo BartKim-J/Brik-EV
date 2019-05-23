@@ -12,13 +12,8 @@
 #include "brik_api.h"
 
 /* ******* STATIC DEFINE ******* */
-typedef struct connection_info {
-
-
-} connection_info_t;
 
 /* ******* GLOBAL VARIABLE ******* */
-
 static pthread_t p_threads[MAX_CONNECTION];
 static int connection_fd[MAX_CONNECTION];
 static bool connectionFlag = false;
@@ -69,12 +64,8 @@ ERROR_T MODULE_PacketHandler_Init(int index, int socket_fd)
 ERROR_T MODULE_PacketHandler_Destroy(void)
 {
     ERROR_T ret = ERROR_OK;
-    int i = 0;
 
-    for(i = 0; i < MAX_CONNECTION; i++)
-    {
-
-    }
+    MODULE_ConnectManager_CloseAll();
 
     return ret;
 }
@@ -106,13 +97,13 @@ static void packet_cmd_connect(int connection_client, void* packet)
 
     printf("connection_client 0x%08x, connection_type: 0x%08x, session_id: 0x%08x\n", connection_client, connection_type, session_id);
 
-    if((cm_get_connection_count() < MAX_CONNECTION) && (connectionFlag == false))
+    if((MODULE_ConnectManager_GetCount() < MAX_CONNECTION) && (connectionFlag == false))
     {        // identify connection type
         switch(connection_type)
         {
             case CONNECTION_TYPE_CONTROL:
                 printf("Control Connection request received from connection %d\n", connection_client);
-                result = cm_add_new_connection(connection_client, connection_type, session_id);
+                result = MODULE_ConnectManager_Open(connection_client, connection_type, session_id);
                 if (result != ERROR_OK)
                 {
                     printf("Failed to establish control connection(maximum exceed)\n");
@@ -125,7 +116,7 @@ static void packet_cmd_connect(int connection_client, void* packet)
 
                 printf("Video Connection request received from connection %d\n", connection_client);
                 //TODO: initialize video data queue
-                result = cm_add_new_connection(connection_client, connection_type, session_id);
+                result = MODULE_ConnectManager_Open(connection_client, connection_type, session_id);
                 if (result != ERROR_OK)
                 {
                     printf("Failed to establish video connection(maximum exceed)\n");
@@ -135,7 +126,7 @@ static void packet_cmd_connect(int connection_client, void* packet)
             case CONNECTION_TYPE_AUDIO:
                 printf("Audio Connection request received from connection %d\n", connection_client);
                 //TODO: initialize video data queue
-                result = cm_add_new_connection(connection_client, connection_type, session_id);
+                result = MODULE_ConnectManager_Open(connection_client, connection_type, session_id);
                 if (result != ERROR_OK)
                 {
                     printf("Failed to establish audio connection(maximum exceed)\n");
@@ -145,7 +136,7 @@ static void packet_cmd_connect(int connection_client, void* packet)
             case CONNECTION_TYPE_BACKCHANNEL:
                 printf("Audio Connection request received from connection %d\n", connection_client);
                 //TODO: initialize video data queue
-                result = cm_add_new_connection(connection_client, connection_type, session_id);
+                result = MODULE_ConnectManager_Open(connection_client, connection_type, session_id);
                 if (result != ERROR_OK)
                 {
                     printf("Failed to establish backchannel connection(maximum exceed)\n");
@@ -177,7 +168,7 @@ static void packet_cmd_connect(int connection_client, void* packet)
     if (send_len < ERROR_OK)
     {
         printf("Socket %d had been disconnected from the remote host\n", connection_client);
-        cm_close_current_connection(connection_client);
+        MODULE_ConnectManager_Close(connection_client);
     }
     else
     {
@@ -219,18 +210,19 @@ static void packet_cmd_disconnect(int connection_client, void* packet)
     if (send_len <= ERROR_OK)
     {
         printf("Connection %d had been disconnected from the remote host\n", connection_client);
-        cm_close_current_connection(connection_client);
+        MODULE_ConnectManager_Close(connection_client);
     }
 
     // TODO: check dead connection
 
     // Workaround: close all existing connection
-    // Check which one would be cm_close_current_connection or cm_close_all_connection
-#if 0
-    cm_close_current_connection(connection_client);
+    // Check which one would be MODULE_ConnectManager_Close or MODULE_ConnectManager_CloseAll
+#if false
+    MODULE_ConnectManager_Close(connection_client);
 #else
-    cm_close_all_connections();
+    MODULE_ConnectManager_CloseAll();
 #endif
+
     message = malloc(sizeof(video_data_msg_t));
     if (message == NULL)
     {
@@ -312,7 +304,7 @@ static void packet_cmd_timesync(int connection_client, void* packet)
     if (send_len < 0)
     {
         printf("Connection %d had been disconnected from the remote host\n", connection_client);
-        cm_close_current_connection(connection_client);
+        MODULE_ConnectManager_Close(connection_client);
     }
 }
 
@@ -349,7 +341,7 @@ static void packet_cmd_machinename(int connection_client, void* packet, void* pa
     if (send_len < 0)
     {
         printf("Connection %d had been disconnected from the remote host\n", connection_client);
-        cm_close_current_connection(connection_client);
+        MODULE_ConnectManager_Close(connection_client);
     }
 }
 
@@ -601,7 +593,7 @@ static void* ph_thread_packet_handler(void *arg)
         if (readlen <= 0)
         {
             printf("socket might had been disconnected from the remote host.\n");
-            cm_close_current_connection(connection_client);
+            MODULE_ConnectManager_Close(connection_client);
 
             return NULL;
         }
@@ -647,7 +639,7 @@ static void* ph_thread_packet_handler(void *arg)
                 {
                     printf("Socket reception Error!!!\n");
                     printf("socket might had been disconnected from the remote host.");
-                    cm_close_current_connection(connection_client);
+                    MODULE_ConnectManager_Close(connection_client);
                     return NULL;
                 }
 
@@ -683,6 +675,6 @@ static void* ph_thread_packet_handler(void *arg)
         }
     }
 
-    cm_close_current_connection(connection_client);
+    MODULE_ConnectManager_Close(connection_client);
     return NULL;
 }

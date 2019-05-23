@@ -68,10 +68,9 @@ static ERROR_T sDecoder_updateOverlay(AVFrame *frame);
 
 /* *** FFMPEG IMAGE *** */
 static ERROR_T sDisplay_LoadImages(void);
+static ERROR_T sDisplay_cleanImageCache(void);
 
 static ERROR_T sDisplay_IntroImage(void);
-
-static ERROR_T sDisplay_cleanImageCache(void);
 
 static AVFrame* sOpenImage(const char *filename);
 static ERROR_T  sSaveFrame(AVFrame *pFrame, int width, int height, int iFrame);

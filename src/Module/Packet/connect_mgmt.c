@@ -11,74 +11,90 @@
 /* ******* INCLUDE ******* */
 #include "brik_api.h"
 
-
-typedef struct connection_status{
+/* ******* STATIC DEFINE ******* */
+typedef struct connection_status {
     int is_occupied;
     int32_t connection;
     int32_t connection_type;
     int32_t session_id;
-}connection_status_t;
+} connection_status_t;
+
+#define CONN_OCCUPIED      1
+#define CONN_NOT_COOUPIED  0
+
+#define CONN_PARAM_UNSET   (-1)
+
+/* ******* GLOBAL VARIABLE ******* */
 
 static int connection_count = 0;
 static connection_status_t conn_status[MAX_CONNECTION];
 
-int cm_get_connection_count()
+/* ******* STATIC FUNCTIONS ******* */
+int MODULE_ConnectManager_GetCount()
 {
     return connection_count;
 }
 
-int cm_add_new_connection(int connection, int32_t connection_type, int32_t session_id)
+int MODULE_ConnectManager_Open(int connection, int32_t connection_type, int32_t session_id)
 {
     int i = 0;
 
     for(i = 0; i < MAX_CONNECTION; i++)
     {
-        if (conn_status[i].is_occupied == 0)
+        if (conn_status[i].is_occupied == CONN_NOT_COOUPIED)
         {
-            conn_status[i].is_occupied = 1;
-            conn_status[i].connection = connection;
+            conn_status[i].is_occupied     = CONN_OCCUPIED;
+            conn_status[i].connection      = connection;
             conn_status[i].connection_type = connection_type;
-            conn_status[i].session_id = session_id;
+            conn_status[i].session_id      = session_id;
+
             connection_count += 1;
+
             return ERROR_OK;
         }
     }
     return ERROR_NOT_OK;
 }
 
-int cm_close_current_connection(int32_t connection)
+int MODULE_ConnectManager_Close(int32_t connection)
 {
     int i = 0;
+
     for(i = 0; i< MAX_CONNECTION; i++)
     {
-        if (conn_status[i].is_occupied == 1 && conn_status[i].connection == connection)
+        if (conn_status[i].is_occupied == CONN_OCCUPIED && conn_status[i].connection == connection)
         {
             close(conn_status[i].connection);
-            conn_status[i].is_occupied = 0;
-            conn_status[i].connection = -1;
-            conn_status[i].connection_type = -1;
-            conn_status[i].session_id = -1;
+            conn_status[i].is_occupied     = CONN_NOT_COOUPIED;
+            conn_status[i].connection      = CONN_PARAM_UNSET;
+            conn_status[i].connection_type = CONN_PARAM_UNSET;
+            conn_status[i].session_id      = CONN_PARAM_UNSET;
+
             connection_count -= 1;
+
             return ERROR_OK;
         }
     }
     return ERROR_NOT_OK;
 }
 
-int cm_close_all_connections(void)
+int MODULE_ConnectManager_CloseAll(void)
 {
     int i = 0;
+
     for(i = 0; i< MAX_CONNECTION; i++)
     {
-        if (conn_status[i].is_occupied == 1)
+        if (conn_status[i].is_occupied == CONN_OCCUPIED)
         {
             close(conn_status[i].connection);
-            conn_status[i].is_occupied = 0;
-            conn_status[i].connection = -1;
-            conn_status[i].connection_type = -1;
-            conn_status[i].session_id = -1;
+            conn_status[i].is_occupied     = CONN_NOT_COOUPIED;
+            conn_status[i].connection      = CONN_PARAM_UNSET;
+            conn_status[i].connection_type = CONN_PARAM_UNSET;
+            conn_status[i].session_id      = CONN_PARAM_UNSET;
+
             connection_count -= 1;
         }
     }
+
     return ERROR_OK;
 }

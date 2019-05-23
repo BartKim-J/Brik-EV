@@ -93,7 +93,7 @@ ERROR_T MODULE_Display_Init_Overlay(int width, int height, uint32_t format, uint
 
     MODULE_Display_Clean();
 
-    if(width == 0 || height == 0)
+    if((width == 0) || (height == 0) )
     {
         return ERROR_NOT_OK;
     }
@@ -205,7 +205,7 @@ static ERROR_T sScreenUpdate(moduleImageViewer_t* module, AVFrame* av_frame)
     SDL_Overlay* bitmap = module->overlay;
     SDL_LockYUVOverlay(bitmap);
 
-#if 1   // re-scale
+#if true
     frameTarget.data[0] = bitmap->pixels[0];
     frameTarget.data[1] = bitmap->pixels[2];
     frameTarget.data[2] = bitmap->pixels[1];
@@ -228,6 +228,7 @@ static ERROR_T sScreenUpdate(moduleImageViewer_t* module, AVFrame* av_frame)
     bitmap->pitches[2] = av_frame->linesize[1];
 
 #endif
+
     SDL_UnlockYUVOverlay(bitmap);
 
     SDL_DisplayYUVOverlay(bitmap, &(module->rect_overlay_dst));
@@ -321,7 +322,5 @@ static void sFPS_Update(void)
     // now to make it an actual frames per second value...
     framespersecond = 1000.f / framespersecond;
 }
-
-
 
 #endif
