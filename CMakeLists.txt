@@ -81,6 +81,8 @@ set(
         ${PRJ_MODULE_PATH}/Packet/connect_mgmt.c
 
         # Video #
+        ${PRJ_MODULE_PATH}/Video/images.c
+        ${PRJ_MODULE_PATH}/Video/decoder.c
         ${PRJ_MODULE_PATH}/Video/video_handler.c
 
         # Display #

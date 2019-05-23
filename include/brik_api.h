@@ -55,6 +55,9 @@
 #include "error_handler.h"
 
 /* *** Module *** */
+// Display
+#include "display.h"
+
 // Packet Handler
 #include "packets.h"
 #include "packet_handler.h"
@@ -63,10 +66,12 @@
 #include "connect_mgmt.h"
 
 // Video Handler
+#include "images.h"
+#include "decoder.h"
+
 #include "video_handler.h"
 
-// Display
-#include "display.h"
+
 
 
 
