@@ -12,6 +12,7 @@
  */
 /* ******* INCLUDE ******* */
 #include "brik_api.h"
+#include "video_handler.h"
 
 /* ******* STATIC DEFINE ******* */
 typedef struct threadqueue THQ;
@@ -26,7 +27,6 @@ static THQ       queue_vh;
 /* *** FFMPEG HANDLE VIDEO MESSAGE *** */
 static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload);
 static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload);
-static ERROR_T handle_video_stop(void);
 
 /* *** THREAD *** */
 static void*   thread_VideoHandler(void *arg);
@@ -61,7 +61,8 @@ ERROR_T MODULE_VideoHandler_Destroy(void)
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize video queue.");
     }
 
-    pthread_exit(&thread_vh);
+    MODULE_Decoder_Uninit();
+    MODULE_Image_CleanImages();
 
     return ret;
 }
@@ -105,6 +106,7 @@ static void* thread_VideoHandler(void *arg)
         switch(message.msgtype)
         {
             case VH_MSG_TYPE_VIDEO_CODEC:
+                //@note Decoder Init In handle_video_codec
                 handle_video_codec(video_msg->packet, video_msg->payload);
                 break;
 
@@ -116,9 +118,8 @@ static void* thread_VideoHandler(void *arg)
                 break;
 
             case VH_MSG_TYPE_VIDEO_DISCONNECT:
-                handle_video_stop();
-
                 MODULE_Image_UpdateImage(INTRO_IMAGE);
+                MODULE_Decoder_Uninit();
                 break;
 
             default:
@@ -238,23 +239,3 @@ static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload)
 
     return ret;
 }
-
-static ERROR_T handle_video_stop(void)
-{
-    int status = ERROR_OK;
-
-    thread_queue_cleanup(&queue_vh, true);
-    if(status != ERROR_OK)
-    {
-        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize video queue.");
-    }
-
-    status = thread_queue_init(&queue_vh);
-    if(status != ERROR_OK)
-    {
-        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize video queue.");
-    }
-
-    return status;
-}
-

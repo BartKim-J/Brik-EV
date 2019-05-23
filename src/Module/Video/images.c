@@ -10,6 +10,7 @@
  */
 /* ******* INCLUDE ******* */
 #include "brik_api.h"
+#include "images.h"
 
 /* ******* GLOBAL VARIABLE ******* */
 /* *** IMAGES *** */
@@ -17,6 +18,7 @@ static AVFrame* imageResource[IMAGE_COUNT];
 
 /* ******* STATIC DEFINE ******* */
 #define IMAGE_BRIK_INTRO_PATH            "/brik/brik_ev_c/lib/images/Brik_intro.png"
+#define IMAGE_BRIK_ERROR_PATH            "/brik/brik_ev_c/lib/images/Brik_error.png"
 
 /* ******* STATIC FUNCTIONS ******* */
 static AVFrame* sOpenImage(const char *filename);
@@ -40,7 +42,13 @@ ERROR_T MODULE_Image_UpdateImage(imageResoure_t imgIndex)
 
                 ret = MODULE_Display_Update(imageResource[INTRO_IMAGE]);
             break;
+        case ERROR_IMAGE:
+                MODULE_Display_Init_Overlay(imageResource[ERROR_IMAGE]->width, imageResource[ERROR_IMAGE]->height, imageResource[INTRO_IMAGE]->format, 0);
+
+                ret = MODULE_Display_Update(imageResource[ERROR_IMAGE]);
+            break;
         default:
+
             break;
     }
 
@@ -53,13 +61,13 @@ ERROR_T MODULE_Image_UpdateImage(imageResoure_t imgIndex)
 ERROR_T MODULE_Image_LoadImages(void)
 {
     ERROR_T ret = ERROR_OK;
-    int i = 0;
+    imageResoure_t imgIndex = 0;
 
-    for(i = 0; i < IMAGE_COUNT; i++)
+    for(imgIndex = 0; imgIndex < IMAGE_COUNT; imgIndex++)
     {
 
 
-        switch(i)
+        switch(imgIndex)
         {
             case INTRO_IMAGE:
                     // Intro Image
@@ -67,6 +75,19 @@ ERROR_T MODULE_Image_LoadImages(void)
                     {
                         imageResource[INTRO_IMAGE] = sOpenImage(IMAGE_BRIK_INTRO_PATH);
                         if(imageResource[INTRO_IMAGE] == NULL)
+                        {
+                            ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Couldn't open intro image file.");
+                        }
+
+                        //sSaveImage(imageResource[INTRO_IMAGE], imageResource[INTRO_IMAGE]->width, imageResource[INTRO_IMAGE]->height, 0);
+                    }
+                break;
+            case ERROR_IMAGE:
+                    // Intro Image
+                    if(imageResource[ERROR_IMAGE] == NULL)
+                    {
+                        imageResource[ERROR_IMAGE] = sOpenImage(IMAGE_BRIK_ERROR_PATH);
+                        if(imageResource[ERROR_IMAGE] == NULL)
                         {
                             ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Couldn't open intro image file.");
                         }
@@ -89,10 +110,8 @@ ERROR_T MODULE_Image_CleanImages(void)
 {
     ERROR_T ret = ERROR_OK;
 
-    // intro Image
     av_free(imageResource[INTRO_IMAGE]);
-
-    // other images..
+    av_free(imageResource[ERROR_IMAGE]);
 
     return ret;
 }

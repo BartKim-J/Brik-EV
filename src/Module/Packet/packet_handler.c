@@ -10,6 +10,7 @@
  */
 /* ******* INCLUDE ******* */
 #include "brik_api.h"
+#include "packet_handler.h"
 
 /* ******* STATIC DEFINE ******* */
 
@@ -66,6 +67,8 @@ ERROR_T MODULE_PacketHandler_Destroy(void)
     ERROR_T ret = ERROR_OK;
 
     MODULE_ConnectManager_CloseAll();
+
+    connectionFlag = false;
 
     return ret;
 }
@@ -187,8 +190,6 @@ static void packet_cmd_connect(int connection_client, void* packet)
     {
         printf("Error while sending video stop message to video handler: %d\n", msg_ret);
     }
-
-    usleep(500000);
 }
 
 static void packet_cmd_disconnect(int connection_client, void* packet)

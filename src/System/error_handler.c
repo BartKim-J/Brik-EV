@@ -13,6 +13,7 @@
 #include <sys/reboot.h>
 
 /* ******* STATIC DEFINE ******* */
+#define LINUX_REBOOT_CMD_POWER_OFF 0x4321fedc
 
 /* ******* GLOBAL VARIABLE ******* */
 
@@ -23,6 +24,8 @@ static ERROR_T sDestoryModuels(void);
 inline void sDebugging(void);
 static void sReboot(void);
 static void sExit(void);
+
+static bool    isRebooting = false;
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
@@ -41,9 +44,16 @@ inline void ERROR_StatusCheck_Inline(BRIK_STATUS errorStatus, const char* errorM
     {
         printf("\n\n\n* BRIK ERROR * \nFILE : %s\nFUNC : %s\nLINE : %d\nMSG  : %s\nCODE : %d\n\n\n",_file, _func, _line, errorMessage, errorStatus); fflush(stdout);
 
-        sReboot();
-        //sExit();
-        //sDebugging();
+        if(!isRebooting)
+        {
+            isRebooting = true;
+
+            sReboot();
+            //sExit();
+            //sDebugging();
+
+            isRebooting = false;
+        }
     }
 }
 
@@ -67,30 +77,40 @@ static void sReboot(void)
 {
     ERROR_T ret = ERROR_OK;
 
-    ERROR_SystemLog("Brik Reboot. \n\n");
+    MODULE_Image_UpdateImage(ERROR_IMAGE);
 
+    ERROR_SystemLog("Brik Rebooting... \n\n");
+
+    sleep(3);
     ret = sDestoryModuels();
     if(ret == ERROR_OK)
     {
         ret = sInitModules();
     }
+    else
+    {
+        ERROR_SystemLog("Brik Destroy Failed!! \n\n");
+    }
+
 
     if(ret != ERROR_OK)
     {
-        ERROR_SystemLog("Brik Reboot Failed. \n\n");
-        ERROR_SystemLog("System Reboot. \n\n");
+        ERROR_SystemLog("Brik Restart Failed!! \n\n");
+        ERROR_SystemLog("System Reboot!! \n\n");
 
         sync();
-
-        reboot(RB_AUTOBOOT);
+        reboot(LINUX_REBOOT_CMD_POWER_OFF);
+        exit(ERROR_NOT_OK);
     }
 
-    ERROR_SystemLog("Brik Restarted. \n\n");
+    ERROR_SystemLog("Brik Restart. \n\n");
 }
 
 static void sExit(void)
 {
     ERROR_T ret = ERROR_OK;
+
+    MODULE_Image_UpdateImage(ERROR_IMAGE);
 
     ret = sDestoryModuels();
     if(ret != ERROR_OK)
@@ -114,17 +134,26 @@ static ERROR_T sInitModules(void)
 {
     ERROR_T ret = ERROR_OK;
 
+    ERROR_SystemLog("Brik Restart Moduels... \n\n");
+
+    ERROR_SystemLog("Brik Restart Display Moduels... \n\n");
     ret = MODULE_Display_Init();
     if (ret != ERROR_OK)
     {
         return ret;
     }
 
+    ERROR_SystemLog("Brik Restart Video Handler Moduels... \n\n");
     ret = MODULE_VideoHandler_Init();
     if (ret != ERROR_OK)
     {
         return ret;
     }
+
+    ERROR_SystemLog("Brik Restart Packet Handler Moduels... \n\n");
+    /*
+        PACKET HANDLER s
+     */
 
     return ret;
 }
@@ -133,17 +162,32 @@ static ERROR_T sDestoryModuels(void)
 {
     ERROR_T ret = ERROR_OK;
 
+    ERROR_SystemLog("Brik Destroy Moduels... \n\n");
+
+    ERROR_SystemLog("Brik Destroy Display Moduels... \n\n");
+    /*
     ret = MODULE_Display_Destroy();
     if (ret != ERROR_OK)
     {
         return ret;
     }
+    */
 
+    ERROR_SystemLog("Brik Destroy Packet Handler Moduels... \n\n");
+    ret = MODULE_PacketHandler_Destroy();
+    if (ret != ERROR_OK)
+    {
+        return ret;
+    }
+
+    ERROR_SystemLog("Brik Destroy Video Handler Moduels... \n\n");
     ret = MODULE_VideoHandler_Destroy();
     if (ret != ERROR_OK)
     {
         return ret;
     }
+
+    ERROR_SystemLog("Brik All Moduels Destroyed... \n\n");
 
     return ret;
 }

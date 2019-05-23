@@ -10,6 +10,7 @@
  */
 /* ******* INCLUDE ******* */
 #include "brik_api.h"
+#include "connect_mgmt.h"
 
 /* ******* STATIC DEFINE ******* */
 typedef struct connection_status {
@@ -35,7 +36,7 @@ int MODULE_ConnectManager_GetCount()
     return connection_count;
 }
 
-int MODULE_ConnectManager_Open(int connection, int32_t connection_type, int32_t session_id)
+ERROR_T MODULE_ConnectManager_Open(int connection, int32_t connection_type, int32_t session_id)
 {
     int i = 0;
 
@@ -56,7 +57,7 @@ int MODULE_ConnectManager_Open(int connection, int32_t connection_type, int32_t 
     return ERROR_NOT_OK;
 }
 
-int MODULE_ConnectManager_Close(int32_t connection)
+ERROR_T MODULE_ConnectManager_Close(int32_t connection)
 {
     int i = 0;
 
@@ -78,7 +79,7 @@ int MODULE_ConnectManager_Close(int32_t connection)
     return ERROR_NOT_OK;
 }
 
-int MODULE_ConnectManager_CloseAll(void)
+ERROR_T MODULE_ConnectManager_CloseAll(void)
 {
     int i = 0;
 

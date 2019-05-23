@@ -37,15 +37,72 @@ typedef struct frameBuffer_Window
 } FB_Window_t;
 #endif
 
+/*************************************************************
+ * @name Display Module
+ *
+ *////@{
+/** @brief
+ *
+ *  @return ERROR_T
+ *
+ *  @note
+ */
+/** @brief
+ *
+ *  @return ERROR_T
+ *
+ *  @note
+ */
 extern ERROR_T  MODULE_Display_Init(void);
+
+/** @brief
+ *
+ *  @return ERROR_T
+ *
+ *  @note
+ */
 extern ERROR_T  MODULE_Display_Init_Overlay(int width, int height, uint32_t src_format, uint32_t dst_format);
 
+/** @brief
+ *
+ *  @return ERROR_T
+ *
+ *  @note
+ */
 extern void     MODULE_Display_Clean(void);
+
+/** @brief
+ *
+ *  @return ERROR_T
+ *
+ *  @note
+ */
 extern ERROR_T  MODULE_Display_Update(AVFrame* frame);
+
+/** @brief
+ *
+ *  @return ERROR_T
+ *
+ *  @note
+ */
 extern ERROR_T  MODULE_Display_Destroy(void);
 
+/*************************************************************@}*/
+
+/*************************************************************
+ * @name FPS
+ *
+ *////@{
 #ifdef DISPLAY_TYPE_SDL
+/** @brief
+ *
+ *  @return ERROR_T
+ *
+ *  @note
+ */
 extern float    MODULE_Display_FPS(void);
+
+/*************************************************************@}*/
 #endif
 
 #endif

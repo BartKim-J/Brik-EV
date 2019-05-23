@@ -93,7 +93,7 @@ ERROR_T MODULE_Display_Init_Overlay(int width, int height, uint32_t format, uint
 
     MODULE_Display_Clean();
 
-    if((width == 0) || (height == 0) )
+    if((width == 0) || (height == 0))
     {
         return ERROR_NOT_OK;
     }

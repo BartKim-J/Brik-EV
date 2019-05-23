@@ -12,6 +12,7 @@
  */
 /* ******* INCLUDE ******* */
 #include "brik_api.h"
+#include "decoder.h"
 
 /* ******* STATIC DEFINE ******* */
 /* ******* FLAGS ******* */
@@ -56,14 +57,21 @@ static ERROR_T sFrameUpdate(AVFrame *frame, int frameQueue);
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 ERROR_T MODULE_Decoder_Init(CodecDataPacket* packet, void* extradata, int extra_len)
 {
+    MODULE_Decoder_Uninit();
+
+    return sVideoContext_Init(packet->video.width, packet->video.height, packet->video.framerate,
+                                extradata,  extra_len);
+}
+ERROR_T MODULE_Decoder_Uninit(void)
+{
     if (video_codec_context != NULL)
     {
         avcodec_free_context(&video_codec_context);
         video_codec_context = NULL;
     }
 
-    return sVideoContext_Init(packet->video.width, packet->video.height, packet->video.framerate,
-                                extradata,  extra_len);
+    prevFrame_Width  = UNALLOCATED_RESOLUTION;
+    prevFrame_Height = UNALLOCATED_RESOLUTION;
 }
 
 ERROR_T MODULE_Decoder_Write(AVPacketPacket* packet, void* payload)
@@ -71,6 +79,12 @@ ERROR_T MODULE_Decoder_Write(AVPacketPacket* packet, void* payload)
     ERROR_T ret = ERROR_OK;
 
     AVPacket* av_packet = NULL;
+
+
+    if((packet == NULL) || (payload == NULL) || (video_codec_context == NULL))
+    {
+        ERROR_StatusCheck(BRIK_STATUS_INVALID_PARAM ,"Not Initialized params..");
+    }
 
     /* av packet allocate && init */
     av_packet = av_packet_alloc();
@@ -115,7 +129,7 @@ ERROR_T MODULE_Decoder_Receive(AVFrame *frame, AVFrame *hw_frame, int frameQueue
 
     AVFrame*        tmp_frame = NULL;  // Just for pointing frame.
 
-    if(frame == NULL || hw_frame == NULL)
+    if((frame == NULL) || (hw_frame == NULL) || (video_codec_context == NULL))
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED, "Not Initialized params.");
     }
