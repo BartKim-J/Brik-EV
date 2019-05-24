@@ -142,13 +142,11 @@ add_custom_target(all_clean
 )
 
 add_custom_target(gdb
-    make clean &&
     make all &&
     sudo sh ${PRJ_SHELL_PATH}/debug.sh
 )
 
 add_custom_target(run
-    make clean &&
     make all &&
     sudo sh ${PRJ_SHELL_PATH}/run.sh
 )

@@ -11,7 +11,6 @@
 #ifndef __PACKETS_H_
 #define __PACKETS_H_
 
-#include <stdint.h>
 // #CONSTANTS
 #define PACKET_SIZE   128
 #define SIZE_MAX_PAYLOAD_CHUNK  2048

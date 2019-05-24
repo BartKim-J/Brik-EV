@@ -26,12 +26,17 @@ typedef struct connection_status {
 #define CONN_PARAM_UNSET   (-1)
 
 /* ******* GLOBAL VARIABLE ******* */
-
 static int connection_count = 0;
 static connection_status_t conn_status[MAX_CONNECTION];
 
 /* ******* STATIC FUNCTIONS ******* */
-int MODULE_ConnectManager_GetCount()
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *  Extern Functions
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+int MODULE_ConnectManager_GetCount(void)
 {
     return connection_count;
 }
@@ -49,7 +54,7 @@ ERROR_T MODULE_ConnectManager_Open(int connection, int32_t connection_type, int3
             conn_status[i].connection_type = connection_type;
             conn_status[i].session_id      = session_id;
 
-            connection_count += 1;
+            connection_count++;
 
             return ERROR_OK;
         }
@@ -71,7 +76,7 @@ ERROR_T MODULE_ConnectManager_Close(int32_t connection)
             conn_status[i].connection_type = CONN_PARAM_UNSET;
             conn_status[i].session_id      = CONN_PARAM_UNSET;
 
-            connection_count -= 1;
+            connection_count--;
 
             return ERROR_OK;
         }
@@ -93,7 +98,7 @@ ERROR_T MODULE_ConnectManager_CloseAll(void)
             conn_status[i].connection_type = CONN_PARAM_UNSET;
             conn_status[i].session_id      = CONN_PARAM_UNSET;
 
-            connection_count -= 1;
+            connection_count--;
         }
     }
 

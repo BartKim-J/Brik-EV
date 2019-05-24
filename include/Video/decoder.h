@@ -17,6 +17,10 @@
  *////@{
 /** @brief
  *
+ *  @param
+ *  @param
+ *  @param
+ *
  *  @return ERROR_T
  *
  *  @note
@@ -33,6 +37,9 @@ extern ERROR_T MODULE_Decoder_Uninit(void);
 
 /** @brief
  *
+ *  @param
+ *  @param
+ *
  *  @return ERROR_T
  *
  *  @note
@@ -40,6 +47,10 @@ extern ERROR_T MODULE_Decoder_Uninit(void);
 extern ERROR_T MODULE_Decoder_Write(AVPacketPacket* packet, void* payload);
 
 /** @brief
+ *
+ *  @param
+ *  @param
+ *  @param
  *
  *  @return ERROR_T
  *

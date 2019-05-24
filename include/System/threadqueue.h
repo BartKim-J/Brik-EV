@@ -11,8 +11,6 @@
 #ifndef _THREADQUEUE_H_
 #define _THREADQUEUE_H_ 1
 
-#include <pthread.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

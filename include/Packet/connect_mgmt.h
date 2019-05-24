@@ -19,13 +19,17 @@
  *////@{
 /** @brief
  *
- *  @return count
+ *  @return count of connections
  *
  *  @note
  */
-extern int MODULE_ConnectManager_GetCount();
+extern int MODULE_ConnectManager_GetCount(void);
 
 /** @brief
+ *
+ *  @param
+ *  @param
+ *  @param
  *
  *  @return ERROR_T
  *
@@ -34,6 +38,8 @@ extern int MODULE_ConnectManager_GetCount();
 extern ERROR_T MODULE_ConnectManager_Open(int32_t connection, int32_t connection_type, int32_t session_id);
 
 /** @brief
+ *
+ *  @param
  *
  *  @return ERROR_T
  *
@@ -47,7 +53,7 @@ extern ERROR_T MODULE_ConnectManager_Close(int32_t connection);
  *
  *  @note
  */
-extern ERROR_T MODULE_ConnectManager_CloseAll();
+extern ERROR_T MODULE_ConnectManager_CloseAll(void);
 
 /*************************************************************@}*/
 

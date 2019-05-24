@@ -14,7 +14,9 @@
 /* *** Standard *** */
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
+
 #include <assert.h>
 #include <errno.h>
 
@@ -22,11 +24,13 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/reboot.h>
 
 /* *** TCP/IP - Socket *** */
 #include <netinet/in.h>
 #include <netinet/ip.h>
 
+/* *** Thread *** */
 #include <pthread.h>
 #include <unistd.h>
 
@@ -46,26 +50,24 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 
-
 /* *** Brik *** */
 #include "brik_utils.h"
 
 /* *** System *** */
-#include "System/threadqueue.h"
+#include "threadqueue.h"
 #include "error_handler.h"
 
 /* *** Module *** */
 // Display
 #include "display.h"
 
-// Packet Handler
+// Packet
+#include "connect_mgmt.h"
+
 #include "packets.h"
 #include "packet_handler.h"
 
-// Connection Manager
-#include "connect_mgmt.h"
-
-// Video Handler
+// Video
 #include "images.h"
 #include "decoder.h"
 

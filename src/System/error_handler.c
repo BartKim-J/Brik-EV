@@ -10,7 +10,7 @@
  */
 /* ******* INCLUDE ******* */
 #include "brik_api.h"
-#include <sys/reboot.h>
+
 
 /* ******* STATIC DEFINE ******* */
 #define LINUX_REBOOT_CMD_POWER_OFF 0x4321fedc
@@ -49,8 +49,6 @@ inline void ERROR_StatusCheck_Inline(BRIK_STATUS errorStatus, const char* errorM
             isRebooting = true;
 
             sReboot();
-            //sExit();
-            //sDebugging();
 
             isRebooting = false;
         }
@@ -81,7 +79,8 @@ static void sReboot(void)
 
     ERROR_SystemLog("Brik Rebooting... \n\n");
 
-    sleep(3);
+    sleep(5);
+
     ret = sDestoryModuels();
     if(ret == ERROR_OK)
     {
@@ -109,8 +108,6 @@ static void sReboot(void)
 static void sExit(void)
 {
     ERROR_T ret = ERROR_OK;
-
-    MODULE_Image_UpdateImage(ERROR_IMAGE);
 
     ret = sDestoryModuels();
     if(ret != ERROR_OK)
@@ -165,13 +162,13 @@ static ERROR_T sDestoryModuels(void)
     ERROR_SystemLog("Brik Destroy Moduels... \n\n");
 
     ERROR_SystemLog("Brik Destroy Display Moduels... \n\n");
-    /*
+
     ret = MODULE_Display_Destroy();
     if (ret != ERROR_OK)
     {
         return ret;
     }
-    */
+
 
     ERROR_SystemLog("Brik Destroy Packet Handler Moduels... \n\n");
     ret = MODULE_PacketHandler_Destroy();

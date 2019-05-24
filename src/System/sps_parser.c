@@ -11,13 +11,21 @@
  */
 /* ******* INCLUDE ******* */
 #include "brik_api.h"
+#include "brik_utils.h"
 
 /* ******* GLOBAL VARIABLE ******* */
 static const unsigned char * m_pStart;
-static unsigned short m_nLength;
-static int m_nCurrentBit;
+static unsigned short        m_nLength;
+static int                   m_nCurrentBit;
 
-unsigned int ReadBit(void)
+/* ******* STATIC FUNCTIONS ******* */
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *  Extern Functions
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+static unsigned int ReadBit(void)
 {
     assert(m_nCurrentBit <= m_nLength * 8);
     int nIndex = m_nCurrentBit / 8;
@@ -28,7 +36,7 @@ unsigned int ReadBit(void)
     return (m_pStart[nIndex] >> (8-nOffset)) & 0x01;
 }
 
-unsigned int ReadBits(int n)
+static unsigned int ReadBits(int n)
 {
     int r = 0;
     int i = 0;
@@ -41,7 +49,7 @@ unsigned int ReadBits(int n)
     return r;
 }
 
-unsigned int ReadExponentialGolombCode(void)
+static unsigned int ReadExponentialGolombCode(void)
 {
     int r = 0;
     int i = 0;
@@ -57,7 +65,7 @@ unsigned int ReadExponentialGolombCode(void)
     return r;
 }
 
-unsigned int ReadSE(void)
+static unsigned int ReadSE(void)
 {
     int r = ReadExponentialGolombCode();
 

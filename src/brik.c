@@ -78,7 +78,7 @@ static ERROR_T sModules_Init(void)
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize Socket Listener.");
     }
 
-#if 0 // @DEBUG
+#if 1 // @DEBUG
     sleep(5);
 
     ERROR_StatusCheck(BRIK_STATUS_NOT_OK ,"TEST REBOOT");

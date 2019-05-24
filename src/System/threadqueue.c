@@ -9,6 +9,7 @@
  *
  */
 #include "brik_api.h"
+#include "threadqueue.h"
 
 #define MSGPOOL_SIZE 512
 

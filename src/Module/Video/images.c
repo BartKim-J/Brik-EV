@@ -33,6 +33,12 @@ ERROR_T MODULE_Image_UpdateImage(imageResoure_t imgIndex)
 {
     ERROR_T ret = ERROR_OK;
 
+    if(imageResource[imgIndex] == NULL)
+    {
+        MODULE_Image_CleanImages();
+        MODULE_Image_LoadImages();
+    }
+
     MODULE_Display_Clean();
 
     switch(imgIndex)
@@ -65,8 +71,6 @@ ERROR_T MODULE_Image_LoadImages(void)
 
     for(imgIndex = 0; imgIndex < IMAGE_COUNT; imgIndex++)
     {
-
-
         switch(imgIndex)
         {
             case INTRO_IMAGE:
@@ -109,9 +113,17 @@ ERROR_T MODULE_Image_LoadImages(void)
 ERROR_T MODULE_Image_CleanImages(void)
 {
     ERROR_T ret = ERROR_OK;
+    imageResoure_t imgIndex = 0;
 
-    av_free(imageResource[INTRO_IMAGE]);
-    av_free(imageResource[ERROR_IMAGE]);
+
+    for(imgIndex = 0; imgIndex < IMAGE_COUNT; imgIndex++)
+    {
+        if(imageResource[imgIndex] == NULL)
+        {
+            av_free(imageResource[imgIndex]);
+            imageResource[imgIndex] = NULL;
+        }
+    }
 
     return ret;
 }

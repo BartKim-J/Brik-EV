@@ -17,12 +17,21 @@
  *////@{
 /** @brief
  *
+ *  @param socket index
+ *  @param socket_fd
+ *
  *  @return ERROR_T
  *
  *  @note
  */
 extern ERROR_T MODULE_PacketHandler_Init(int index, int socket_fd);
 
+/** @brief
+ *
+ *  @return ERROR_T
+ *
+ *  @note
+ */
 extern ERROR_T MODULE_PacketHandler_Destroy(void);
 
 /*************************************************************@}*/

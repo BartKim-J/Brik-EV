@@ -29,6 +29,7 @@ static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload);
 static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload);
 
 /* *** THREAD *** */
+static void*   thread_cleanup(void *arg);
 static void*   thread_VideoHandler(void *arg);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -53,7 +54,8 @@ ERROR_T MODULE_VideoHandler_Init(void)
 }
 ERROR_T MODULE_VideoHandler_Destroy(void)
 {
-    ERROR_T ret = ERROR_OK;
+    ERROR_T ret  = ERROR_OK;
+    void*   tret = NULL;
 
     thread_queue_cleanup(&queue_vh, true);
     if(ret != ERROR_OK)
@@ -61,8 +63,25 @@ ERROR_T MODULE_VideoHandler_Destroy(void)
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize video queue.");
     }
 
-    MODULE_Decoder_Uninit();
-    MODULE_Image_CleanImages();
+    ret = MODULE_Decoder_Uninit();
+    //ret = MODULE_Image_CleanImages();
+
+    ret = pthread_cancel(thread_vh);
+    if (ret != ERROR_OK)
+    {
+        ERROR_SystemLog("Brik Failed to try cancle thread. \n\n");
+    }
+
+
+    ret = pthread_join(thread_vh, &tret);
+    if (ret != ERROR_NOT_OK)
+    {
+        if (tret == PTHREAD_CANCELED)
+            ERROR_SystemLog("Brik Done Video Handler Thread Clenaup. \n\n");
+
+        else
+            ERROR_SystemLog("Brik Failed Video Handler Thread Clenaup. \n\n");
+    }
 
     return ret;
 }
@@ -77,6 +96,20 @@ ERROR_T MODULE_VideoHandler_SendMessage(void* msg, VH_MSG_T message_type)
  *  Thread
  *
  * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * */
+
+static void* thread_cleanup(void *arg)
+{
+    ERROR_SystemLog("Brik Start Video Handler Thread Clenaup. \n\n");
+
+    video_data_msg_t* video_msg = arg;
+
+    if(video_msg != NULL)
+    {
+        free(video_msg);
+    }
+
+    return NULL;
+}
 static void* thread_VideoHandler(void *arg)
 {
     ERROR_T ret_queue = ERROR_OK;
@@ -85,6 +118,9 @@ static void* thread_VideoHandler(void *arg)
 
     video_data_msg_t* video_msg = NULL;
     SDL_Event event;
+
+    // Thread Cleanup
+    pthread_cleanup_push(thread_cleanup, video_msg);
 
     MODULE_Image_LoadImages();
 
@@ -135,7 +171,6 @@ static void* thread_VideoHandler(void *arg)
             switch( event.type )
             {
                 case SDL_QUIT:
-                    MODULE_Image_CleanImages();
                     SDL_Quit();
                     break;
 
@@ -144,6 +179,8 @@ static void* thread_VideoHandler(void *arg)
             }
         }
     }
+
+    pthread_cleanup_pop(0);
 
     return ERROR_OK;
 }

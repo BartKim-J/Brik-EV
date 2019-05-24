@@ -72,6 +72,8 @@ ERROR_T MODULE_Decoder_Uninit(void)
 
     prevFrame_Width  = UNALLOCATED_RESOLUTION;
     prevFrame_Height = UNALLOCATED_RESOLUTION;
+
+    return ERROR_OK;
 }
 
 ERROR_T MODULE_Decoder_Write(AVPacketPacket* packet, void* payload)
@@ -110,6 +112,8 @@ ERROR_T MODULE_Decoder_Write(AVPacketPacket* packet, void* payload)
     {
         printf("INVAL %d, AGAIN %d, NOMEM %d, EOF %d\n",  AVERROR(EINVAL), AVERROR(EAGAIN), AVERROR(ENOMEM), AVERROR_EOF);
         printf("Error Sending a packet for decoding %d\n", ret);
+
+        ERROR_StatusCheck(BRIK_STATUS_NOT_OK, "failed sending packet!!");
     }
 
     ERROR_SystemLog("\n\n- - - - - - DECODER SEND :: FRAME(LAW) - - - - - \n");
