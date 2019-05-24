@@ -66,8 +66,6 @@ ERROR_T MODULE_PacketHandler_Destroy(void)
     return ret;
 }
 
-
-
 /* * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * *
  *
  *  Thread
