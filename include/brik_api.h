@@ -63,7 +63,6 @@
 
 // Packet
 #include "connect_mgmt.h"
-
 #include "packets.h"
 #include "packet_handler.h"
 

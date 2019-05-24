@@ -23,13 +23,12 @@ static pthread_t thread_vh;
 static THQ       queue_vh;
 
 /* ******* STATIC FUNCTIONS ******* */
-
 /* *** FFMPEG HANDLE VIDEO MESSAGE *** */
 static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload);
 static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload);
 
 /* *** THREAD *** */
-static void*   thread_cleanup(void *arg);
+static void    thread_VideoHandler_Cleanup(void *arg);
 static void*   thread_VideoHandler(void *arg);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -52,6 +51,7 @@ ERROR_T MODULE_VideoHandler_Init(void)
 
     return ret;
 }
+
 ERROR_T MODULE_VideoHandler_Destroy(void)
 {
     ERROR_T ret  = ERROR_OK;
@@ -96,8 +96,7 @@ ERROR_T MODULE_VideoHandler_SendMessage(void* msg, VH_MSG_T message_type)
  *  Thread
  *
  * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * */
-
-static void* thread_cleanup(void *arg)
+static void thread_VideoHandler_Cleanup(void *arg)
 {
     ERROR_SystemLog("Brik Start Video Handler Thread Clenaup. \n\n");
 
@@ -106,10 +105,10 @@ static void* thread_cleanup(void *arg)
     if(video_msg != NULL)
     {
         free(video_msg);
+        video_msg = NULL;
     }
-
-    return NULL;
 }
+
 static void* thread_VideoHandler(void *arg)
 {
     ERROR_T ret_queue = ERROR_OK;
@@ -120,7 +119,7 @@ static void* thread_VideoHandler(void *arg)
     SDL_Event event;
 
     // Thread Cleanup
-    pthread_cleanup_push(thread_cleanup, video_msg);
+    pthread_cleanup_push(thread_VideoHandler_Cleanup, video_msg);
 
     MODULE_Image_LoadImages();
 

@@ -24,7 +24,7 @@
  *
  *  @note
  */
-extern ERROR_T MODULE_PacketHandler_Init(int index, int socket_fd);
+extern ERROR_T MODULE_PacketHandler_Init(int socket_fd);
 
 /** @brief
  *

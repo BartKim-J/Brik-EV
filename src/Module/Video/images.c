@@ -104,9 +104,6 @@ ERROR_T MODULE_Image_LoadImages(void)
         }
     }
 
-
-    // Other Image
-
     return ret;
 }
 
@@ -114,7 +111,6 @@ ERROR_T MODULE_Image_CleanImages(void)
 {
     ERROR_T ret = ERROR_OK;
     imageResoure_t imgIndex = 0;
-
 
     for(imgIndex = 0; imgIndex < IMAGE_COUNT; imgIndex++)
     {

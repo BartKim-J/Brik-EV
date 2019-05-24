@@ -78,7 +78,7 @@ static ERROR_T sModules_Init(void)
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize Socket Listener.");
     }
 
-#if 1 // @DEBUG
+#if false // @DEBUG
     sleep(5);
 
     ERROR_StatusCheck(BRIK_STATUS_NOT_OK ,"TEST REBOOT");
@@ -126,11 +126,9 @@ static ERROR_T sClientHandler(void)
     ERROR_T ret = ERROR_OK;
 
     int connection_client = 0;
-    int connection_count  = 0;
 
     unsigned int client_addr_size = 0;
 
-    printf("Waiting for connection %d\n", connection_count);
     client_addr_size = sizeof(client_addr);
     connection_client = accept(sock_tcp, (struct sockaddr *)&client_addr, &client_addr_size);
 
@@ -141,15 +139,12 @@ static ERROR_T sClientHandler(void)
     }
     else
     {
-        printf("info_connection: count %d, new connection %d\n", connection_count, connection_client);
-        // open handler thread for packet deliverey
-        if(MODULE_PacketHandler_Init(connection_count, connection_client) == ERROR_NOT_OK)
+        printf("info_connection: count %d, new connection %d\n", connection_client);
+
+        if(MODULE_PacketHandler_Init(connection_client) == ERROR_NOT_OK)
         {
-            printf("Failed to create packet handler %d\n", connection_count);
             return ERROR_NOT_OK;
         }
-
-        connection_count++;
     }
 
     return ret;

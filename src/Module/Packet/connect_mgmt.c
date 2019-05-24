@@ -14,14 +14,11 @@
 
 /* ******* STATIC DEFINE ******* */
 typedef struct connection_status {
-    int is_occupied;
+    bool    isOccupied;
     int32_t connection;
     int32_t connection_type;
     int32_t session_id;
 } connection_status_t;
-
-#define CONN_OCCUPIED      1
-#define CONN_NOT_COOUPIED  0
 
 #define CONN_PARAM_UNSET   (-1)
 
@@ -47,9 +44,9 @@ ERROR_T MODULE_ConnectManager_Open(int connection, int32_t connection_type, int3
 
     for(i = 0; i < MAX_CONNECTION; i++)
     {
-        if (conn_status[i].is_occupied == CONN_NOT_COOUPIED)
+        if(!conn_status[i].isOccupied)
         {
-            conn_status[i].is_occupied     = CONN_OCCUPIED;
+            conn_status[i].isOccupied      = true;
             conn_status[i].connection      = connection;
             conn_status[i].connection_type = connection_type;
             conn_status[i].session_id      = session_id;
@@ -68,10 +65,10 @@ ERROR_T MODULE_ConnectManager_Close(int32_t connection)
 
     for(i = 0; i< MAX_CONNECTION; i++)
     {
-        if (conn_status[i].is_occupied == CONN_OCCUPIED && conn_status[i].connection == connection)
+        if((conn_status[i].isOccupied) && (conn_status[i].connection == connection))
         {
             close(conn_status[i].connection);
-            conn_status[i].is_occupied     = CONN_NOT_COOUPIED;
+            conn_status[i].isOccupied      = false;
             conn_status[i].connection      = CONN_PARAM_UNSET;
             conn_status[i].connection_type = CONN_PARAM_UNSET;
             conn_status[i].session_id      = CONN_PARAM_UNSET;
@@ -90,10 +87,10 @@ ERROR_T MODULE_ConnectManager_CloseAll(void)
 
     for(i = 0; i< MAX_CONNECTION; i++)
     {
-        if (conn_status[i].is_occupied == CONN_OCCUPIED)
+        if (conn_status[i].isOccupied)
         {
             close(conn_status[i].connection);
-            conn_status[i].is_occupied     = CONN_NOT_COOUPIED;
+            conn_status[i].isOccupied      = false;
             conn_status[i].connection      = CONN_PARAM_UNSET;
             conn_status[i].connection_type = CONN_PARAM_UNSET;
             conn_status[i].session_id      = CONN_PARAM_UNSET;

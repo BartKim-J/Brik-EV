@@ -1,6 +1,6 @@
 /**
  * @file packets.h
- * @author Lex
+ * @author Ben
  * @date
  * @brief
  *
@@ -80,6 +80,7 @@
 #define PACKET_CMD_WINSTATE_RESP	  0xA00DC001
 #define PACKET_CMD_WIN_NOTIFY		  0x000EC001
 #define PACKET_CMD_WIN_NOTIFY_RESP	  0xA00EC001
+#define PACKET_CMD_UNKOWN             0xDEADBEEF
 
 // Connection Type
 #define CONNECTION_TYPE_CONTROL       0
@@ -88,9 +89,9 @@
 #define CONNECTION_TYPE_BACKCHANNEL   3
 
 // Window state
-#define WINDOW_STATE_SINGLE   0
-#define WINDOW_STATE_MULTI   1
-#define WINDOW_STATE_HIDDEN   2
+#define WINDOW_STATE_SINGLE           0
+#define WINDOW_STATE_MULTI            1
+#define WINDOW_STATE_HIDDEN           2
 
 //structure for packet data
 
