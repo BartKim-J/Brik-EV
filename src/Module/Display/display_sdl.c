@@ -13,7 +13,7 @@
 // How many frames time values to keep
 // The higher the value the smoother the result is...
 // Don't make it 0 or less :)
-#define FRAME_VALUES 5
+#define FRAME_VALUES 30
 
 /* ******* GLOBAL VARIABLE ******* */
 static uint32_t frametimes[FRAME_VALUES]; // An array to store frame times:

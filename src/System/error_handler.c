@@ -153,7 +153,12 @@ static ERROR_T sInitModules(void)
 
     ERROR_SystemLog("Brik Restart Packet Handler Moduels... \n\n");
     /*
-        PACKET HANDLER s
+        PACKET HANDLER
+     */
+
+    ERROR_SystemLog("Brik Destroy Socket & TCP Moduels... \n\n");
+    /*
+        PACKET HANDLER
      */
 
     return ret;
@@ -181,12 +186,17 @@ static ERROR_T sDestoryModuels(void)
         return ret;
     }
 
-    ERROR_SystemLog("Brik Destroy Video Handler Moduels... \n\n");
+    ERROR_SystemLog("Brik Destroy Video & Frame Handler Moduels... \n\n");
     ret = MODULE_VideoHandler_Destroy();
     if (ret != ERROR_OK)
     {
         return ret;
     }
+
+    ERROR_SystemLog("Brik Destroy Socket & TCP Moduels... \n\n");
+    /*
+        PACKET HANDLER
+     */
 
     ERROR_SystemLog("Brik All Moduels Destroyed... \n\n");
 

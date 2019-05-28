@@ -22,7 +22,10 @@ static struct sockaddr_in  client_addr;
 static ERROR_T sModules_Init(void);
 
 /* *** TCP/IP *** */
-static ERROR_T sSocketListener_Init(void);
+ERROR_T MODULE_SocketListener_Init(void);
+ERROR_T MODULE_SocketListener_Destroy(void);
+
+/* *** Handler *** */
 static ERROR_T sClientHandler(void);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -72,7 +75,7 @@ static ERROR_T sModules_Init(void)
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize Video Handler.");
     }
 
-    ret = sSocketListener_Init();
+    ret = MODULE_SocketListener_Init();
     if (ret != ERROR_OK)
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize Socket Listener.");
@@ -92,7 +95,7 @@ static ERROR_T sModules_Init(void)
  *  Socket & TCP
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-static ERROR_T sSocketListener_Init(void)
+ERROR_T MODULE_SocketListener_Init(void)
 {
     ERROR_T ret = ERROR_OK;
 
@@ -108,14 +111,26 @@ static ERROR_T sSocketListener_Init(void)
     sock_tcp_addr.sin_port        = htons(9500);
     sock_tcp_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    if (bind(sock_tcp, (struct sockaddr*)&sock_tcp_addr, sizeof(sock_tcp_addr)) == ERROR_NOT_OK)
+    if(bind(sock_tcp, (struct sockaddr*)&sock_tcp_addr, sizeof(sock_tcp_addr)) == ERROR_NOT_OK)
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to bind socket listener.");
     }
 
-    if (listen(sock_tcp, 30) == ERROR_NOT_OK)
+    if(listen(sock_tcp, 30) == ERROR_NOT_OK)
     {
-        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Listen Failed.");
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Listen Socket Failed.");
+    }
+
+    return ret;
+}
+
+ERROR_T MODULE_SocketListener_Destroy(void)
+{
+    ERROR_T ret = ERROR_OK;
+
+    if(close(sock_tcp) == ERROR_NOT_OK)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Close Socket Failed.");
     }
 
     return ret;

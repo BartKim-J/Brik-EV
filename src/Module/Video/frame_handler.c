@@ -136,7 +136,7 @@ frame_data_t* Module_FrameHandler_BufferAlloc(void)
 
                  frameBuffer[index].target_frame  = NULL;
 
-                 if(frameBuffer[index].frame == NULL || frameBuffer[index].hw_frame == NULL)
+                 if((frameBuffer[index].frame == NULL) || (frameBuffer[index].hw_frame == NULL))
                  {
                      ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate frame.");
                  }
@@ -298,7 +298,7 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
 
     static uint32_t            fpd = 0;
     static uint32_t            fps = 0;
-    uint32_t               fpsCond = 0;
+
     static bool           skipFlag = 0;
     static uint32_t       skipCnt  = 0;
     static uint32_t       skipMax  = 0;
@@ -350,21 +350,8 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
     }
     else // if not delayed FPD
     {
-        if(frame->width <= frame->height)
-        {
-            fpsCond = TARGET_MOBILE_FPS;
-        }
-        else
-        {
-            fpsCond = TARGET_DESKTOP_FPS;
-        }
-
-
-        if(fps <= fpsCond)
-        {
-            // always frame updated.
-            MODULE_Display_Update(frame);
-        }
+        // always frame updated.
+        MODULE_Display_Update(frame);
     }
 
     fps = MODULE_Display_FPS();

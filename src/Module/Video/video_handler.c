@@ -28,7 +28,7 @@ static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload);
 static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload);
 
 /* *** FFMPEG HANDLE FRAME MESSAGE *** */
-static ERROR_T handle_frame_buffer_stop(void);
+static ERROR_T sFrameHandler_Stop(void);
 
 /* *** THREAD *** */
 static void    thread_VideoHandler_Cleanup(void *arg);
@@ -166,7 +166,7 @@ static void* thread_VideoHandler(void *arg)
             case VH_MSG_TYPE_VIDEO_DISCONNECT:
                 MODULE_Decoder_Uninit();
 
-                handle_frame_buffer_stop();
+                sFrameHandler_Stop();
                 break;
 
             default:
@@ -281,16 +281,10 @@ static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload)
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate frame.");
     }
 
-    ret = MODULE_Decoder_Write(packet, payload);
-    if(ret == AVERROR(EAGAIN))
-    {
+    MODULE_Decoder_Write(packet, payload);
 
-        Module_FrameHandler_BufferFree(frameBuffer);
-    }
-    else
-    {
-        MODULE_Decoder_Receive(frameBuffer);
-    }
+    MODULE_Decoder_Receive(frameBuffer);
+
 
     free(packet);
     free(payload);
@@ -298,7 +292,7 @@ static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload)
     return ret;
 }
 
-static ERROR_T handle_frame_buffer_stop(void)
+static ERROR_T sFrameHandler_Stop(void)
 {
     ERROR_T ret = ERROR_OK;
     frame_data_msg_t * message;

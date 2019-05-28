@@ -30,8 +30,6 @@ static AVCodecContext* video_codec_context    = NULL;
 static enum AVPixelFormat hw_pix_fmt          = AV_PIX_FMT_DRM_PRIME;
 AVBufferRef *hw_device_ctx = NULL;
 
-
-
 /* ******* STATIC FUNCTIONS ******* */
 static ERROR_T sVideoContext_Init(int width, int height, int framerate, void* extradata, int extra_len);
 
@@ -66,7 +64,6 @@ ERROR_T MODULE_Decoder_Write(AVPacketPacket* packet, void* payload)
 
     AVPacket* av_packet = NULL;
 
-
     if((packet == NULL) || (payload == NULL) || (video_codec_context == NULL))
     {
         ERROR_StatusCheck(BRIK_STATUS_INVALID_PARAM ,"Not Initialized params..");
@@ -80,12 +77,10 @@ ERROR_T MODULE_Decoder_Write(AVPacketPacket* packet, void* payload)
     }
 
     ret = av_packet_from_data(av_packet, payload, packet->hdr.payloadSize);
+    if (ret < ERROR_OK)
     {
-        if (ret < ERROR_OK)
-        {
-            printf("Error setting data to a packet %d\n", ret);
-            //ERROR_StatusCheck(BRIK_STATUS_NOT_OK, "Error setting data to a packet");
-        }
+        printf("Error setting data to a packet %d\n", ret);
+        ERROR_StatusCheck(BRIK_STATUS_NOT_OK, "Error setting data to a packet");
     }
 
     av_packet->pts = packet->avpacket.timestamp;
@@ -97,7 +92,6 @@ ERROR_T MODULE_Decoder_Write(AVPacketPacket* packet, void* payload)
         printf("Error Sending a packet for decoding %d\n", ret);
 
         //ERROR_StatusCheck(BRIK_STATUS_NOT_OK, "failed sending packet!!");
-        return ret;
     }
 
 #if false // MODULE BACK TRACING.
@@ -131,13 +125,14 @@ ERROR_T MODULE_Decoder_Receive(frame_data_t* frameData)
         if(ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
         {
             Module_FrameHandler_BufferFree(frameData);
+
             return ERROR_OK;
         }
         else if (ret < 0)
         {
-            // during dcoding Skipping.
             Module_FrameHandler_BufferFree(frameData);
-            ERROR_StatusCheck(BRIK_STATUS_DECODE_ERROR, "Error during decoding");
+
+            return ERROR_OK; //DEBUG
         }
 
         if(frameData->frame->format == hw_pix_fmt)
