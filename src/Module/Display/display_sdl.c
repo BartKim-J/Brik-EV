@@ -9,7 +9,6 @@
 #include "brik_api.h"
 #include "display_sdl.h"
 
-
 /* ******* STATIC DEFINE ******* */
 // How many frames time values to keep
 // The higher the value the smoother the result is...

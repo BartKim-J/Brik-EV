@@ -24,37 +24,24 @@
 #define AV_CODEC_ID_H264_RKMPP           "h264_rkmpp"
 #define AV_CODEC_ID_H264_BRIK            "h264"
 
-/* *** IMAGES *** */
-#define UNALLOCATED_RESOLUTION           0
-#define UNALLOCATED_FORMAT               0
-
-/* *** FRAME *** */
-#define TARGET_MOBILE_FPS               30 // frame per second
-#define TARGET_DESKTOP_FPS              15
-
-#define TARGET_FPD                       5
-
-#define TARGET_SKIP_FRAME_MAX            3
-
 /* ******* GLOBAL VARIABLE ******* */
 /* *** FFMPEG *** */
 static AVCodecContext* video_codec_context    = NULL;
 static enum AVPixelFormat hw_pix_fmt          = AV_PIX_FMT_DRM_PRIME;
 AVBufferRef *hw_device_ctx = NULL;
 
-/* *** FRAME *** */
-static int prevFrame_Width  = UNALLOCATED_RESOLUTION;
-static int prevFrame_Height = UNALLOCATED_RESOLUTION;
+
 
 /* ******* STATIC FUNCTIONS ******* */
 static ERROR_T sVideoContext_Init(int width, int height, int framerate, void* extradata, int extra_len);
-static ERROR_T sFrameUpdate(AVFrame *frame, int frameQueue);
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
  *  Extern Functions
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 ERROR_T MODULE_Decoder_Init(CodecDataPacket* packet, void* extradata, int extra_len)
 {
     MODULE_Decoder_Uninit();
@@ -69,9 +56,6 @@ ERROR_T MODULE_Decoder_Uninit(void)
         avcodec_free_context(&video_codec_context);
         video_codec_context = NULL;
     }
-
-    prevFrame_Width  = UNALLOCATED_RESOLUTION;
-    prevFrame_Height = UNALLOCATED_RESOLUTION;
 
     return ERROR_OK;
 }
@@ -100,8 +84,7 @@ ERROR_T MODULE_Decoder_Write(AVPacketPacket* packet, void* payload)
         if (ret < ERROR_OK)
         {
             printf("Error setting data to a packet %d\n", ret);
-
-            return ret;
+            //ERROR_StatusCheck(BRIK_STATUS_NOT_OK, "Error setting data to a packet");
         }
     }
 
@@ -110,149 +93,89 @@ ERROR_T MODULE_Decoder_Write(AVPacketPacket* packet, void* payload)
     ret = avcodec_send_packet(video_codec_context, av_packet);
     if (ret < ERROR_OK)
     {
-        printf("INVAL %d, AGAIN %d, NOMEM %d, EOF %d\n",  AVERROR(EINVAL), AVERROR(EAGAIN), AVERROR(ENOMEM), AVERROR_EOF);
+        //printf("INVAL %d, AGAIN %d, NOMEM %d, EOF %d\n",  AVERROR(EINVAL), AVERROR(EAGAIN), AVERROR(ENOMEM), AVERROR_EOF);
         printf("Error Sending a packet for decoding %d\n", ret);
 
-        ERROR_StatusCheck(BRIK_STATUS_NOT_OK, "failed sending packet!!");
+        //ERROR_StatusCheck(BRIK_STATUS_NOT_OK, "failed sending packet!!");
+        return ret;
     }
 
+#if false // MODULE BACK TRACING.
     ERROR_SystemLog("\n\n- - - - - - DECODER SEND :: FRAME(LAW) - - - - - \n");
 
     printf("set packet size = %d\n", av_packet->size);
     printf("set packet data = %p\n", av_packet->data);
 
     ERROR_SystemLog("\n\n- - - - - - - - - - - - - - - - - - - - - - - - - \n");
+#endif
 
     return ret;
 }
 
 
-ERROR_T MODULE_Decoder_Receive(AVFrame *frame, AVFrame *hw_frame, int frameQueue)
+ERROR_T MODULE_Decoder_Receive(frame_data_t* frameData)
 {
-    ERROR_T ret = ERROR_OK;
+    ERROR_T ret    = ERROR_OK;
+    ERROR_T retMsg = ERROR_OK;
+    frame_data_msg_t * message;
 
-    AVFrame*        tmp_frame = NULL;  // Just for pointing frame.
-
-    if((frame == NULL) || (hw_frame == NULL) || (video_codec_context == NULL))
+    if((frameData->frame == NULL) || (frameData->hw_frame == NULL) || (video_codec_context == NULL))
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED, "Not Initialized params.");
     }
 
-    while(ret >= 0)
+    while(true)
     {
-        ret = avcodec_receive_frame(video_codec_context, frame);
+        ret = avcodec_receive_frame(video_codec_context, frameData->frame);
 
-        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+        if(ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
         {
-            // Frame not yet.
-            return ret;
+            Module_FrameHandler_BufferFree(frameData);
+            return ERROR_OK;
         }
         else if (ret < 0)
         {
             // during dcoding Skipping.
+            Module_FrameHandler_BufferFree(frameData);
             ERROR_StatusCheck(BRIK_STATUS_DECODE_ERROR, "Error during decoding");
         }
 
-        if (frame->format == hw_pix_fmt)
+        if(frameData->frame->format == hw_pix_fmt)
         {
             /* retrieve data from GPU to CPU */
-            if ((ret = av_hwframe_transfer_data(hw_frame, frame, 0)) < 0)
+            if ((ret = av_hwframe_transfer_data(frameData->hw_frame, frameData->frame, 0)) < 0)
             {
-                fprintf(stderr, "Error transferring the data to system memory\n");
-
-                return ret;
+                Module_FrameHandler_BufferFree(frameData);
+                ERROR_StatusCheck(BRIK_STATUS_DECODE_ERROR, "Error transferring the data to system memory");
             }
 
-            tmp_frame = hw_frame;
+            frameData->target_frame = frameData->hw_frame;
         }
         else
         {
-            tmp_frame = frame;
+            frameData->target_frame = frameData->frame;
         }
 
-        // if get frame updateOveray
-        sFrameUpdate(tmp_frame, frameQueue);
-    }
 
-    return ret;
-}
-
-static ERROR_T sFrameUpdate(AVFrame *frame, int frameQueue)
-{
-    ERROR_T ret = ERROR_OK;
-
-    static uint32_t            fpd = 0;
-    static uint32_t            fps = 0;
-
-    static bool           skipFlag = 0;
-    static uint32_t       skipCnt  = 0;
-    static uint32_t       skipMax  = 0;
-
-
-    if((frame->width == 0) || (frame->height == 0))
-    {
-        return ERROR_NOT_OK;
-    }
-
-
-
-    if((frame->width != prevFrame_Width) || (frame->height != prevFrame_Height))
-    {
-
-        MODULE_Display_Init_Overlay(frame->width, frame->height, frame->format, 0);
-
-        prevFrame_Width  = frame->width;
-        prevFrame_Height = frame->height;
-
-        skipCnt    = 0;
-        skipFlag   = false;
-        skipMax    = 0;
-    }
-
-
-    // fps control.
-    if(fpd > TARGET_FPD) // if delayed FPD.
-    {
-
-        // max_skip frame is TARGET_SKIP_FRAME_MAX.
-        skipMax = ((fpd / TARGET_SKIP_FRAME_MAX) <= TARGET_SKIP_FRAME_MAX) ? (fpd / 1): TARGET_SKIP_FRAME_MAX;
-
-
-        if(!skipFlag)
+        message = malloc(sizeof(frame_data_msg_t));
+        if (message == NULL)
         {
-            skipFlag = true;
-
-            MODULE_Display_Update(frame);
+            ERROR_StatusCheck(BRIK_STATUS_UNKNOWN_MESSAGE ,"Failed to allocate frame handler message: FH_MSG_TYPE_VIDEO_UPDATE.");
         }
-        else
+
+        message->frameData = frameData;
+
+        message->packet     = NULL;
+        message->payload    = NULL;
+
+        retMsg = MODULE_FrameHandler_SendMessage((void*)message, FH_MSG_TYPE_VIDEO_UPDATE);
+        if(retMsg != ERROR_OK)
         {
-            skipCnt++;
-
-            if(skipCnt >= skipMax)
-            {
-                skipCnt  = 0;
-                skipFlag = false;
-            }
+            printf("Error while sending video stop message to frame handler: %d\n", retMsg);
         }
+
+        return retMsg;
     }
-    else // if not delayed FPD
-    {
-        // always frame updated.
-        MODULE_Display_Update(frame);
-    }
-
-    fps = MODULE_Display_FPS();
-    fpd = frameQueue;
-
-    // Data Log
-    ERROR_SystemLog("\n\n- - - - DECODER RECEIVE :: FRAME(DECODED) - - - -\n");
-    printf("Pixel Format: [ %3d ] Key Frame: [ %d ] Resolution [ %dx%d ] preview Rsolution [ %dx%d ]\n", \
-            frame->format, frame->key_frame, frame->width, frame->height, prevFrame_Width, prevFrame_Height);
-
-    printf("\n[%7d] frame(s) decoded\n", video_codec_context->frame_number);
-    printf("\n[%3d]FPS\n", fps);
-    printf("\n[%3d]FPD\n", fpd);
-    ERROR_SystemLog("\n\n- - - - - - - - - - - - - - - - - - - - - - - - - \n");
 
     return ret;
 }

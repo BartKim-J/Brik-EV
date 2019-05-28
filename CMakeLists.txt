@@ -97,6 +97,8 @@ set(
         ${PRJ_MODULE_PATH}/Video/images.c
         ${PRJ_MODULE_PATH}/Video/decoder.c
         ${PRJ_MODULE_PATH}/Video/video_handler.c
+        ${PRJ_MODULE_PATH}/Video/frame_handler.c
+        
 
         # Display #
         ${PRJ_MODULE_PATH}/Display/display.c

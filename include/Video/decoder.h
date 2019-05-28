@@ -56,7 +56,7 @@ extern ERROR_T MODULE_Decoder_Write(AVPacketPacket* packet, void* payload);
  *
  *  @note
  */
-extern ERROR_T MODULE_Decoder_Receive(AVFrame *frame, AVFrame *hw_frame, int frameQueue);
+extern ERROR_T MODULE_Decoder_Receive(frame_data_t* frameData);
 
 /*************************************************************@}*/
 

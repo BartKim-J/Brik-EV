@@ -139,11 +139,12 @@ static ERROR_T sClientHandler(void)
     }
     else
     {
-        printf("info_connection: count %d, new connection %d\n", connection_client);
+        printf("new connection %d\n", connection_client);
 
         if(MODULE_PacketHandler_Init(connection_client) == ERROR_NOT_OK)
         {
-            return ERROR_NOT_OK;
+            //return ret;
+            printf("Over Connection.");
         }
     }
 

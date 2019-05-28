@@ -78,7 +78,9 @@ int thread_queue_init(struct threadqueue *queue)
 int thread_queue_add(struct threadqueue *queue, void *data, long msgtype)
 {
     struct msglist *newmsg;
+
     pthread_mutex_lock(&queue->mutex);
+
     newmsg = get_msglist(queue);
     if (newmsg == NULL) {
         pthread_mutex_unlock(&queue->mutex);
@@ -99,6 +101,7 @@ int thread_queue_add(struct threadqueue *queue, void *data, long msgtype)
         if(queue->length == 0)
                 pthread_cond_broadcast(&queue->cond);
     queue->length++;
+
     pthread_mutex_unlock(&queue->mutex);
 
     return ERROR_OK;

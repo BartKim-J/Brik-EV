@@ -26,20 +26,10 @@ typedef enum vh_msg_type {
     VH_MSG_TYPE_VIDEO_NONE,
 } VH_MSG_T;
 
-typedef enum vh_msg_type {
-    FH_MSG_TYPE_VIDEO_UPDATE      = 1,
-    FH_MSG_TYPE_VIDEO_STOP        = 2,
-    FH_MSG_TYPE_VIDEO_NONE,
-} FH_MSG_T;
-
 typedef struct video_data_msg {
     void* packet;
     void* payload;
 } video_data_msg_t;
-
-typedef struct frame_data_msg {
-    void* frame;
-} frame_data_msg_t;
 
 /*************************************************************
  * @name Video Handler Module
@@ -74,14 +64,12 @@ extern ERROR_T MODULE_VideoHandler_SendMessage(void* msg, VH_MSG_T message_type)
 
 /** @brief
  *
- *  @param msg
- *  @param message_type
- *
- *  @return ERROR_T
+ *  @return FPD
  *
  *  @note
  */
-extern ERROR_T MODULE_FrameHandler_SendMessage(void* msg, FH_MSG_T message_type);
+extern int MODULE_VideoHandler_FPD(void);
+
 /*************************************************************@}*/
 #endif /* VIDEO_HANDLER */
 /**@}*/

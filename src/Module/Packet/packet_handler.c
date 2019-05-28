@@ -44,9 +44,9 @@ ERROR_T MODULE_PacketHandler_Init(int socket_fd)
 
     for(index = 0; index < MAX_CONNECTION; index++)
     {
-        if(!handlerManger[index].isOccupied)
+        //if(!handlerManger[index].isOccupied)
         {
-            handlerManger[index].isOccupied      = true;
+            //handlerManger[index].isOccupied      = true;
             handlerManger[index].connection_fd   = socket_fd;
             ret = pthread_create(&handlerManger[index].p_thread, NULL, thread_PacketHandler, (void*)(&handlerManger[index].connection_fd));
 

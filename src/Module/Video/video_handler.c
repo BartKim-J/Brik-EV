@@ -16,32 +16,21 @@
 
 /* ******* STATIC DEFINE ******* */
 typedef struct threadqueue THQ;
-typedef struct frameManager {
-    bool isOccupied;
-    AVFrame *frame;
-    AVFrame *hw_frame;
-} frameManager_t;
 
-#define FRAME_BUFFER_MAX 35
 /* ******* GLOBAL VARIABLE ******* */
 /* *** SYSTEM *** */
 static pthread_t thread_vh;
 static THQ       queue_vh;
-
-static pthread_t thread_fh;
-static THQ       queue_fh;
-
-frameManager_t frameManager[FRAME_BUFFER_MAX];
 
 /* ******* STATIC FUNCTIONS ******* */
 /* *** FFMPEG HANDLE VIDEO MESSAGE *** */
 static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload);
 static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload);
 
-/* *** THREAD *** */
-static void    thread_FrameHandler_Cleanup(void *arg);
-static void*   thread_FrameHandler(void *arg);
+/* *** FFMPEG HANDLE FRAME MESSAGE *** */
+static ERROR_T handle_frame_buffer_stop(void);
 
+/* *** THREAD *** */
 static void    thread_VideoHandler_Cleanup(void *arg);
 static void*   thread_VideoHandler(void *arg);
 
@@ -63,14 +52,7 @@ ERROR_T MODULE_VideoHandler_Init(void)
 
     ret = pthread_create(&thread_vh, NULL, thread_VideoHandler, NULL);
 
-    // init data queue for the thread
-    ret = thread_queue_init(&queue_fh);
-    if(ret != ERROR_OK)
-    {
-        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize video queue.");
-    }
-
-    ret = pthread_create(&thread_fh, NULL, thread_VideoHandler, NULL);
+    MODULE_FrameHandler_Init();
 
     return ret;
 }
@@ -106,7 +88,14 @@ ERROR_T MODULE_VideoHandler_Destroy(void)
             ERROR_SystemLog("Brik Failed Video Handler Thread Clenaup. \n\n");
     }
 
+    MODULE_FrameHandler_Destroy();
+
     return ret;
+}
+
+int MODULE_VideoHandler_FPD(void)
+{
+    return  thread_queue_length(&queue_vh);
 }
 
 ERROR_T MODULE_VideoHandler_SendMessage(void* msg, VH_MSG_T message_type)
@@ -114,76 +103,11 @@ ERROR_T MODULE_VideoHandler_SendMessage(void* msg, VH_MSG_T message_type)
     return thread_queue_add(&queue_vh, msg, (long)message_type);
 }
 
-ERROR_T MODULE_FrameHandler_SendMessage(void* msg, FH_MSG_T message_type)
-{
-    return thread_queue_add(&queue_vh, msg, (long)message_type);
-}
-
-
 /* * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * *
  *
  *  Thread
  *
  * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * */
-static void thread_FrameHandler_Cleanup(void *arg)
-{
-    ERROR_SystemLog("Brik Start Frame Handler Thread Clenaup. \n\n");
-
-    frame_data_msg_t* video_msg = arg;
-
-    if(video_msg != NULL)
-    {
-        free(video_msg);
-        video_msg = NULL;
-    }
-}
-static void* thread_FrameHandler(void *arg)
-{
-    ERROR_T ret_queue = ERROR_OK;
-
-    struct threadmsg message;
-
-    frame_data_msg_t* frame_msg = NULL;
-
-    // Thread Cleanup
-    pthread_cleanup_push(thread_VideoHandler_Cleanup, frame_msg);
-
-    while(true)
-    {
-        // get queued data
-        ret_queue = thread_queue_get(&queue_fh, NULL, &message);
-        if(ret_queue != 0)
-        {
-            printf("Failed to get video thread queue msg, %d\n", ret_queue);
-            continue;
-        }
-
-        frame_msg = (frame_data_msg_t*)(message.data);
-
-        // identify the type of packet if codec -> handle extradata and (re)init video decoder
-        switch(message.msgtype)
-        {
-            case FH_MSG_TYPE_VIDEO_UPDATE:
-                av_frame_free(&frameManager[index].hw_frame);
-                av_frame_free(&frameManager[index].frame);
-                break;
-
-            case FH_MSG_TYPE_VIDEO_STOP:
-                break;
-
-            default:
-                ERROR_StatusCheck(BRIK_STATUS_UNKNOWN_MESSAGE ,"Invalid video pakcet.");
-                break;
-        }
-
-        free(frame_msg);
-    }
-
-    pthread_cleanup_pop(0);
-
-    return ERROR_OK;
-}
-
 static void thread_VideoHandler_Cleanup(void *arg)
 {
     ERROR_SystemLog("Brik Start Video Handler Thread Clenaup. \n\n");
@@ -229,7 +153,6 @@ static void* thread_VideoHandler(void *arg)
         switch(message.msgtype)
         {
             case VH_MSG_TYPE_VIDEO_CODEC:
-                //@note Decoder Init In handle_video_codec
                 handle_video_codec(video_msg->packet, video_msg->payload);
                 break;
 
@@ -241,8 +164,9 @@ static void* thread_VideoHandler(void *arg)
                 break;
 
             case VH_MSG_TYPE_VIDEO_DISCONNECT:
-                MODULE_Image_UpdateImage(INTRO_IMAGE);
                 MODULE_Decoder_Uninit();
+
+                handle_frame_buffer_stop();
                 break;
 
             default:
@@ -252,14 +176,22 @@ static void* thread_VideoHandler(void *arg)
 
         free(video_msg);
 
-        while( SDL_PollEvent( &event ) )
+        while(SDL_PollEvent( &event ))
         {
             /* We are only worried about SDL_KEYDOWN and SDL_KEYUP events */
-            switch( event.type )
+            switch(event.type)
             {
                 case SDL_QUIT:
                     SDL_Quit();
                     break;
+
+                case SDL_KEYDOWN:
+                  printf( "Key press detected\n" );
+                  break;
+
+                case SDL_KEYUP:
+                  printf( "Key release detected\n" );
+                  break;
 
                 default:
                     break;
@@ -286,22 +218,7 @@ static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload)
     int32_t width_sps = 0;
     int32_t height_sps = 0;
 
-    MODULE_Display_Clean();
-
-    ERROR_SystemLog("\n\n- - - - PACKET RECIVE :: VIDEO(CODEC) - - - -\n\n");
-
-    printf("Frame Dimension from packet->video.width = %d, packet->video_height = %d\n", packet->video.width, packet->video.height);
-
     sps_len = (p_extra[6] << 8) | p_extra[7];
-
-    printf("\nextradata = \n");
-    for (int i = 0; i< packet->hdr.payloadSize; i++)
-    {
-        printf("%02X ", p_extra[i]);
-    }
-    printf("\n\n");
-
-    printf("length sps = %d\n", sps_len);
 
     sps_parse(&p_extra[9], sps_len - 1, &width_sps, &height_sps);
 
@@ -314,12 +231,26 @@ static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload)
         printf("TODO: FIX Resolution calculation\n\n\n");
     }
 
-    ERROR_SystemLog("\n\n- - - - - - - - - - - - - - - - \n");
-
     if(MODULE_Decoder_Init(packet, payload, packet->hdr.payloadSize) < 0)
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to init video decoder.");
     }
+
+#if false // MODULE BACK TRACING.
+    ERROR_SystemLog("\n\n- - - - PACKET RECIVE :: VIDEO(CODEC) - - - -\n\n");
+
+    printf("Frame Dimension from packet->video.width = %d, packet->video_height = %d\n", packet->video.width, packet->video.height);
+
+    printf("\nextradata = \n");
+    for (int i = 0; i< packet->hdr.payloadSize; i++)
+    {
+        printf("%02X ", p_extra[i]);
+    }
+    printf("\n\n");
+
+    printf("length sps = %d\n", sps_len);
+    ERROR_SystemLog("\n\n- - - - - - - - - - - - - - - - \n");
+#endif
 
     free(packet);
     free(payload);
@@ -331,7 +262,9 @@ static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload)
 {
     ERROR_T ret = ERROR_OK;
 
-    int             index = 0;
+    frame_data_t* frameBuffer = NULL;
+
+#if false // MODULE BACK TRACING.
     unsigned char * data       = (unsigned char*)payload;
 
     ERROR_SystemLog("  \n- - - - - PACKET RECEIVE :: VIDEO(DATA) - - - - -\n");
@@ -340,30 +273,47 @@ static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload)
         printf("%02X ", data[i]);
     }
     ERROR_SystemLog("\n\n- - - - - - - - - - - - - - - - - - - - - - - - - \n");
+#endif
 
-    MODULE_Decoder_Write(packet, payload);
-
-
-    for(index = 0; index < FRAME_BUFFER_MAX; index++)
+    frameBuffer = Module_FrameHandler_BufferAlloc();
+    if(frameBuffer == NULL)
     {
-        if(!frameManager[index].isOccupied)
-        {
-            /* av frame value allocate & init */
-            frameManager[index].frame    = av_frame_alloc();
-            frameManager[index].hw_frame = av_frame_alloc();
-
-            if(frameManager[index].frame == NULL || frameManager[index].hw_frame == NULL)
-            {
-                ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate frame.");
-            }
-
-        }
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate frame.");
     }
 
-    MODULE_Decoder_Receive(frameManager[index].frame, frameManager[index].hw_frame, thread_queue_length(&queue_vh));
+    ret = MODULE_Decoder_Write(packet, payload);
+    if(ret == AVERROR(EAGAIN))
+    {
+
+        Module_FrameHandler_BufferFree(frameBuffer);
+    }
+    else
+    {
+        MODULE_Decoder_Receive(frameBuffer);
+    }
 
     free(packet);
     free(payload);
+
+    return ret;
+}
+
+static ERROR_T handle_frame_buffer_stop(void)
+{
+    ERROR_T ret = ERROR_OK;
+    frame_data_msg_t * message;
+
+    message = malloc(sizeof(frame_data_msg_t));
+    if (message == NULL)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_UNKNOWN_MESSAGE ,"Failed to allocate frame handler message: FH_MSG_TYPE_VIDEO_STOP.");
+    }
+
+    ret = MODULE_FrameHandler_SendMessage((void*)message, FH_MSG_TYPE_VIDEO_STOP);
+    if(ret != ERROR_OK)
+    {
+        printf("Error while sending video stop message to video handler: %d\n", ret);
+    }
 
     return ret;
 }

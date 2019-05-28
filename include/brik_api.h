@@ -54,23 +54,29 @@
 #include "brik_utils.h"
 
 /* *** System *** */
-#include "threadqueue.h"
 #include "error_handler.h"
+#include "threadqueue.h"
+
 
 /* *** Module *** */
 // Display
 #include "display.h"
 
 // Packet
-#include "connect_mgmt.h"
-#include "packets.h"
 #include "packet_handler.h"
 
+#include "connect_mgmt.h"
+#include "packets.h"
+
+
 // Video
+#include "frame_handler.h"
+#include "video_handler.h"
+
 #include "images.h"
 #include "decoder.h"
 
-#include "video_handler.h"
+
 
 
 
