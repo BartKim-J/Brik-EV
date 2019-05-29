@@ -185,11 +185,16 @@ static void* thread_VideoHandler(void *arg)
                     break;
 
                 case SDL_KEYDOWN:
-                  printf( "Key press detected\n" );
-                  break;
-
+                    switch (event.key.keysym.sym)
+                    {
+                        case SDLK_ESCAPE :
+                            ERROR_StatusCheck(BRIK_STATUS_SDL_ERROR ,"FORCE QUICK with ESC Key.");
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
                 case SDL_KEYUP:
-                  printf( "Key release detected\n" );
                   break;
 
                 default:

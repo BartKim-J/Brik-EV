@@ -23,15 +23,16 @@ typedef struct threadqueue THQ;
 
 
 /* *** FRAME *** */
-#define LIMIT_FPD                       5 // frame packet delayed
+#define LIMIT_FPD                       12 // frame packet delayed
 #define LIMIT_VPD                       10 // video packet delayed
-#define LIMIT_SKIP_FRAME_MAX            5
+#define LIMIT_SKIP_FRAME_VALUE           1
 
-#define FRAME_BUFFER_MAX                100
+#define FRAME_BUFFER_MAX               254
 
 /* ******* GLOBAL VARIABLE ******* */
 static pthread_t       thread_fh;
 static THQ             queue_fh;
+
 
 static pthread_mutex_t mutex_fh = PTHREAD_MUTEX_INITIALIZER;
 
@@ -99,7 +100,7 @@ ERROR_T MODULE_FrameHandler_Destroy(void)
     ret = pthread_cancel(thread_fh);
     if (ret != ERROR_OK)
     {
-        ERROR_SystemLog("Brik Failed to try cancle Frame Handler thread. \n\n");
+        ERROR_SystemLog("Brik Failed to try cancle thread. \n\n");
     }
 
     ret = pthread_join(thread_fh, &tret);
@@ -350,6 +351,8 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
     if(frame == NULL)
     {
         // This frame Already updated with free.
+        pthread_mutex_unlock(&mutex_fh);
+
         return ERROR_NOT_OK;
     }
 
@@ -376,36 +379,28 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
     }
 
 #if true
-    // fps control.
-    if(fpd > LIMIT_FPD) // if delayed VPD.
+
+    skipMax = LIMIT_SKIP_FRAME_VALUE * (fpd / LIMIT_FPD);
+
+    skipMax *= skipMax;
+
+    if((!skipFlag) || (skipMax == 0))
     {
+        skipFlag = true;
 
-        // max_skip frame is TARGET_SKIP_FRAME_MAX.
-        skipMax = ((fpd / LIMIT_SKIP_FRAME_MAX) <= LIMIT_SKIP_FRAME_MAX) ? (fpd / 2): LIMIT_SKIP_FRAME_MAX;
-
-
-        if(!skipFlag)
-        {
-            skipFlag = true;
-
-            MODULE_Display_Update(frame);
-        }
-        else
-        {
-            skipCnt++;
-
-            if(skipCnt >= skipMax)
-            {
-                skipCnt  = 0;
-                skipFlag = false;
-            }
-        }
-    }
-    else // if not delayed VPD
-    {
-        // always frame updated.
         MODULE_Display_Update(frame);
     }
+    else
+    {
+        skipCnt++;
+
+        if(skipCnt >= skipMax)
+        {
+            skipCnt  = 0;
+            skipFlag = false;
+        }
+    }
+
 #else
     MODULE_Display_Update(frame);
 #endif
@@ -422,10 +417,10 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
     printf("\n[%3d]FPS\n", fps);
     printf("\n[%3d]FPD\n", fpd);
     ERROR_SystemLog("\n\n- - - - - - - - - - - - - - - - - - - - - - - - - \n");
+]
 #else
     printf("\n[%3ld]FPS [%3ld]FPD [%3ld]VPD", fps, fpd, vpd);
 #endif
-
 
     return ret;
 }

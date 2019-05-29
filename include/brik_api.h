@@ -62,19 +62,18 @@
 // Socket
 #include "socket_listener.h"
 
-// Display
-#include "display.h"
-
 // Packet
 #include "packet_handler.h"
 
 #include "connect_mgmt.h"
 #include "packets.h"
 
-
 // Video
 #include "frame_handler.h"
 #include "video_handler.h"
+
+// Display
+#include "display.h"
 
 #include "images.h"
 #include "decoder.h"
