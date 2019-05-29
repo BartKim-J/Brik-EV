@@ -156,10 +156,12 @@ static ERROR_T sInitModules(void)
         PACKET HANDLER
      */
 
-    ERROR_SystemLog("Brik Destroy Socket & TCP Moduels... \n\n");
-    /*
-        PACKET HANDLER
-     */
+    ERROR_SystemLog("Brik Restart Socket Listener Moduels... \n\n");
+    ret = MODULE_SocketListener_Init();
+    if(ret != ERROR_OK)
+    {
+        return ret;
+    }
 
     return ret;
 }
@@ -171,29 +173,39 @@ static ERROR_T sDestoryModuels(void)
     ERROR_SystemLog("Brik Destroy Moduels... \n\n");
 
     ERROR_SystemLog("Brik Destroy Display Moduels... \n\n");
-
     ret = MODULE_Display_Destroy();
-    if (ret != ERROR_OK)
+    if(ret != ERROR_OK)
     {
         return ret;
     }
-
 
     ERROR_SystemLog("Brik Destroy Packet Handler Moduels... \n\n");
     ret = MODULE_PacketHandler_Destroy();
-    if (ret != ERROR_OK)
+    if(ret != ERROR_OK)
     {
         return ret;
     }
 
-    ERROR_SystemLog("Brik Destroy Video & Frame Handler Moduels... \n\n");
+    ERROR_SystemLog("Brik Destroy Video Handler Moduels... \n\n");
     ret = MODULE_VideoHandler_Destroy();
-    if (ret != ERROR_OK)
+    if(ret != ERROR_OK)
     {
         return ret;
     }
 
-    ERROR_SystemLog("Brik Destroy Socket & TCP Moduels... \n\n");
+    ERROR_SystemLog("Brik Destroy Frame Handler Moduels... \n\n");
+    ret = MODULE_FrameHandler_Destroy();
+    if(ret != ERROR_OK)
+    {
+        return ret;
+    }
+
+    ERROR_SystemLog("Brik Destroy Socket Listener Moduels... \n\n");
+    ret = MODULE_SocketListener_Destroy();
+    if(ret != ERROR_OK)
+    {
+        return ret;
+    }
     /*
         PACKET HANDLER
      */

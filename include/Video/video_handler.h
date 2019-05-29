@@ -62,14 +62,6 @@ extern ERROR_T MODULE_VideoHandler_Destroy(void);
  */
 extern ERROR_T MODULE_VideoHandler_SendMessage(void* msg, VH_MSG_T message_type);
 
-/** @brief
- *
- *  @return FPD
- *
- *  @note
- */
-extern int MODULE_VideoHandler_FPD(void);
-
 /*************************************************************@}*/
 #endif /* VIDEO_HANDLER */
 /**@}*/

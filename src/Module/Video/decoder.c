@@ -88,10 +88,7 @@ ERROR_T MODULE_Decoder_Write(AVPacketPacket* packet, void* payload)
     ret = avcodec_send_packet(video_codec_context, av_packet);
     if (ret < ERROR_OK)
     {
-        //printf("INVAL %d, AGAIN %d, NOMEM %d, EOF %d\n",  AVERROR(EINVAL), AVERROR(EAGAIN), AVERROR(ENOMEM), AVERROR_EOF);
-        printf("Error Sending a packet for decoding %d\n", ret);
-
-        //ERROR_StatusCheck(BRIK_STATUS_NOT_OK, "failed sending packet!!");
+        ERROR_StatusCheck(BRIK_STATUS_NOT_OK, "failed sending packet!!");
     }
 
 #if false // MODULE BACK TRACING.
@@ -107,13 +104,16 @@ ERROR_T MODULE_Decoder_Write(AVPacketPacket* packet, void* payload)
 }
 
 
-ERROR_T MODULE_Decoder_Receive(frame_data_t* frameData)
+bool MODULE_Decoder_Receive(frame_data_t* frameData)
 {
     ERROR_T ret    = ERROR_OK;
     ERROR_T retMsg = ERROR_OK;
     frame_data_msg_t * message;
 
-    if((frameData->frame == NULL) || (frameData->hw_frame == NULL) || (video_codec_context == NULL))
+    bool frameDecoded = false;
+
+    if((frameData == NULL) || (frameData->frame == NULL) || (frameData->hw_frame == NULL) || \
+       (video_codec_context == NULL))
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED, "Not Initialized params.");
     }
@@ -121,18 +121,19 @@ ERROR_T MODULE_Decoder_Receive(frame_data_t* frameData)
     while(true)
     {
         ret = avcodec_receive_frame(video_codec_context, frameData->frame);
-
-        if(ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+        if((ret == AVERROR(EAGAIN)) || (ret == AVERROR_EOF))
         {
-            Module_FrameHandler_BufferFree(frameData);
+            if(frameDecoded == false)
+            {
+                Module_FrameHandler_BufferFree(frameData);
+            }
 
-            return ERROR_OK;
+            return ret;
         }
-        else if (ret < 0)
+        else if (ret < ERROR_OK)
         {
             Module_FrameHandler_BufferFree(frameData);
-
-            return ERROR_OK; //DEBUG
+            ERROR_StatusCheck(BRIK_STATUS_DECODE_ERROR, "Error during decoding");
         }
 
         if(frameData->frame->format == hw_pix_fmt)
@@ -158,18 +159,15 @@ ERROR_T MODULE_Decoder_Receive(frame_data_t* frameData)
             ERROR_StatusCheck(BRIK_STATUS_UNKNOWN_MESSAGE ,"Failed to allocate frame handler message: FH_MSG_TYPE_VIDEO_UPDATE.");
         }
 
-        message->frameData = frameData;
+        frameDecoded = true;
 
-        message->packet     = NULL;
-        message->payload    = NULL;
+        message->frameData = frameData;
 
         retMsg = MODULE_FrameHandler_SendMessage((void*)message, FH_MSG_TYPE_VIDEO_UPDATE);
         if(retMsg != ERROR_OK)
         {
             printf("Error while sending video stop message to frame handler: %d\n", retMsg);
         }
-
-        return retMsg;
     }
 
     return ret;

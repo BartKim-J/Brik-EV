@@ -61,7 +61,10 @@ include_directories(
     
     # System #
     ${PRJ_INCLUDE_PATH}/System
-    
+
+    # Socket #
+    ${PRJ_INCLUDE_PATH}/Socket
+        
     # Packet #
     ${PRJ_INCLUDE_PATH}/Packet/Handler
     ${PRJ_INCLUDE_PATH}/Packet
@@ -86,6 +89,9 @@ set(
         ${PRJ_SYSETM_PATH}/sps_parser.c
         ${PRJ_SYSETM_PATH}/threadqueue.c
 
+        # Socket #
+        ${PRJ_MODULE_PATH}/Socket/socket_listener.c
+        
         # Packet #
         ${PRJ_MODULE_PATH}/Packet/Handler/packet_cmd.c
         ${PRJ_MODULE_PATH}/Packet/Handler/packet_video.c

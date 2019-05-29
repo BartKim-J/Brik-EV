@@ -49,12 +49,16 @@ ERROR_T MODULE_PacketHandler_Init(int socket_fd)
             //handlerManger[index].isOccupied      = true;
             handlerManger[index].connection_fd   = socket_fd;
             ret = pthread_create(&handlerManger[index].p_thread, NULL, thread_PacketHandler, (void*)(&handlerManger[index].connection_fd));
+            if(ret != ERROR_OK)
+            {
+                ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize packet handler thread.");
+            }
 
-            return ret;
+            return ERROR_OK;
         }
     }
 
-    return ret;
+    return ERROR_NOT_OK;
 }
 
 ERROR_T MODULE_PacketHandler_Destroy(void)

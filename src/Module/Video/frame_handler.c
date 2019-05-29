@@ -23,14 +23,14 @@ typedef struct threadqueue THQ;
 
 
 /* *** FRAME *** */
-#define TARGET_MOBILE_FPS               60 // frame per second
-#define TARGET_DESKTOP_FPS              30
+#define TARGET_MOBILE_FPS               45 // frame per second
+#define TARGET_DESKTOP_FPS              20 // frame per second
 
-#define TARGET_FPD                       5
+#define TARGET_FPD                       5 // frame packet delayed
 
 #define TARGET_SKIP_FRAME_MAX            3
 
-#define FRAME_BUFFER_MAX                50
+#define FRAME_BUFFER_MAX                30
 
 /* ******* GLOBAL VARIABLE ******* */
 static pthread_t       thread_fh;
@@ -73,9 +73,13 @@ ERROR_T MODULE_FrameHandler_Init(void)
     }
 
     ret = pthread_create(&thread_fh, NULL, thread_FrameHandler, NULL);
+    if(ret != ERROR_OK)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize thread.");
+    }
 
     ret = pthread_mutex_init(&mutex_fh, NULL);
-    if (ret != ERROR_OK)
+    if(ret != ERROR_OK)
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize mutex.");
     }
@@ -103,11 +107,10 @@ ERROR_T MODULE_FrameHandler_Destroy(void)
     ret = pthread_join(thread_fh, &tret);
     if (ret != ERROR_NOT_OK)
     {
-        if (tret == PTHREAD_CANCELED)
-            ERROR_SystemLog("Brik Done Frame Handler Thread Clenaup. \n\n");
-
-        else
+        if(tret != PTHREAD_CANCELED)
+        {
             ERROR_SystemLog("Brik Failed Frame Handler Thread Clenaup. \n\n");
+        }
     }
 
     sFrameBuffer_Cleanup();
@@ -115,16 +118,20 @@ ERROR_T MODULE_FrameHandler_Destroy(void)
     return ret;
 }
 
-frame_data_t* Module_FrameHandler_BufferAlloc(void)
+frame_data_t* Module_FrameHandler_BufferAlloc(AVPacketPacket* packet, void* payload)
 {
     int             index = 0;
     frame_data_t*   retFrame = NULL;
 
     pthread_mutex_lock(&mutex_fh);
 
+    if((packet == NULL) || (payload == NULL))
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_OK ,"Invalid param.");
+    }
+
     if(allocatedFrame < (FRAME_BUFFER_MAX - 1))
     {
-
         for(index = 0; index < FRAME_BUFFER_MAX; index++)
          {
              if(!frameBuffer[index].isOccupied)
@@ -133,6 +140,9 @@ frame_data_t* Module_FrameHandler_BufferAlloc(void)
                  frameBuffer[index].isOccupied    = true;
                  frameBuffer[index].frame         = av_frame_alloc();
                  frameBuffer[index].hw_frame      = av_frame_alloc();
+
+                 frameBuffer[index].packet        = packet;
+                 frameBuffer[index].payload       = payload;
 
                  frameBuffer[index].target_frame  = NULL;
 
@@ -153,6 +163,7 @@ frame_data_t* Module_FrameHandler_BufferAlloc(void)
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_OK ,"Frame Buffer Over Index.");
     }
+
 
     pthread_mutex_unlock(&mutex_fh);
 
@@ -177,10 +188,14 @@ ERROR_T Module_FrameHandler_BufferFree(frame_data_t* frameData)
 
             av_frame_free(&frameData->hw_frame);
             av_frame_free(&frameData->frame);
+            free(frameData->packet);
+            free(frameData->payload);
 
             frameData->frame         = NULL;
             frameData->hw_frame      = NULL;
             frameData->target_frame  = NULL;
+            frameData->packet        = NULL;
+            frameData->payload       = NULL;
 
             allocatedFrame--;
         }
@@ -312,6 +327,7 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
 
     if((frame->width != prevFrame_Width) || (frame->height != prevFrame_Height))
     {
+        MODULE_Display_Clean();
 
         MODULE_Display_Init_Overlay(frame->width, frame->height, frame->format, 0);
 
@@ -355,7 +371,7 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
     }
 
     fps = MODULE_Display_FPS();
-    fpd = MODULE_VideoHandler_FPD();
+    fpd = allocatedFrame;
 
 #if false // MODULE BACK TRACING.
     // Data Log
@@ -366,6 +382,8 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
     printf("\n[%3d]FPS\n", fps);
     printf("\n[%3d]FPD\n", fpd);
     ERROR_SystemLog("\n\n- - - - - - - - - - - - - - - - - - - - - - - - - \n");
+#else
+    printf("\n[%3d]FPS [%3d]FPD", fps, fpd);
 #endif
 
     return ret;

@@ -51,8 +51,10 @@ ERROR_T MODULE_VideoHandler_Init(void)
     }
 
     ret = pthread_create(&thread_vh, NULL, thread_VideoHandler, NULL);
-
-    MODULE_FrameHandler_Init();
+    if(ret != ERROR_OK)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize video thread.");
+    }
 
     return ret;
 }
@@ -81,21 +83,13 @@ ERROR_T MODULE_VideoHandler_Destroy(void)
     ret = pthread_join(thread_vh, &tret);
     if (ret != ERROR_NOT_OK)
     {
-        if (tret == PTHREAD_CANCELED)
-            ERROR_SystemLog("Brik Done Video Handler Thread Clenaup. \n\n");
-
-        else
+        if(tret != PTHREAD_CANCELED)
+        {
             ERROR_SystemLog("Brik Failed Video Handler Thread Clenaup. \n\n");
+        }
     }
 
-    MODULE_FrameHandler_Destroy();
-
     return ret;
-}
-
-int MODULE_VideoHandler_FPD(void)
-{
-    return  thread_queue_length(&queue_vh);
 }
 
 ERROR_T MODULE_VideoHandler_SendMessage(void* msg, VH_MSG_T message_type)
@@ -218,6 +212,8 @@ static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload)
     int32_t width_sps = 0;
     int32_t height_sps = 0;
 
+    MODULE_Display_Clean();
+
     sps_len = (p_extra[6] << 8) | p_extra[7];
 
     sps_parse(&p_extra[9], sps_len - 1, &width_sps, &height_sps);
@@ -275,19 +271,28 @@ static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload)
     ERROR_SystemLog("\n\n- - - - - - - - - - - - - - - - - - - - - - - - - \n");
 #endif
 
-    frameBuffer = Module_FrameHandler_BufferAlloc();
+    frameBuffer = Module_FrameHandler_BufferAlloc(packet, payload);
     if(frameBuffer == NULL)
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate frame.");
     }
 
-    MODULE_Decoder_Write(packet, payload);
+    ret = MODULE_Decoder_Write(packet, payload);
+    if(ret < ERROR_OK)
+    {
+        printf("WRITE :: %d\n", ret);
+    }
 
-    MODULE_Decoder_Receive(frameBuffer);
+    ret = MODULE_Decoder_Receive(frameBuffer);
+    if(ret == AVERROR(EAGAIN))
+    {
+        // Frame received
+    }
+    else if(ret < ERROR_OK)
+    {
+        printf("READ :: %d\n",  ret);
+    }
 
-
-    free(packet);
-    free(payload);
 
     return ret;
 }

@@ -32,13 +32,14 @@ typedef struct frame_data {
     AVFrame *hw_frame;
 
     AVFrame *target_frame; // Just for pointing frame.
+
+    void* packet;
+    void* payload;
+
 } frame_data_t;
 
 typedef struct frame_data_msg {
     void* frameData;
-
-    void* packet;
-    void* payload;
 } frame_data_msg_t;
 
 /*************************************************************
@@ -79,8 +80,14 @@ extern ERROR_T MODULE_FrameHandler_Cleanup(void);
  *
  *  @note
  */
-extern frame_data_t* Module_FrameHandler_BufferAlloc(void);
+extern frame_data_t* Module_FrameHandler_BufferAlloc(AVPacketPacket* packet, void* payload);
 
+/** @brief
+ *
+ *  @return frame_data_t pointer
+ *
+ *  @note
+ */
 extern ERROR_T Module_FrameHandler_BufferFree(frame_data_t* frameData);
 
 /** @brief

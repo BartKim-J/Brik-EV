@@ -13,9 +13,11 @@
 // How many frames time values to keep
 // The higher the value the smoother the result is...
 // Don't make it 0 or less :)
-#define FRAME_VALUES 30
+#define FRAME_VALUES 10
 
 /* ******* GLOBAL VARIABLE ******* */
+static pthread_mutex_t mutex_sdl = PTHREAD_MUTEX_INITIALIZER;
+
 static uint32_t frametimes[FRAME_VALUES]; // An array to store frame times:
 static uint32_t frametimelast;            // Last calculated SDL_GetTicks
 static uint32_t framecount;               // total frames rendered
@@ -61,6 +63,12 @@ ERROR_T MODULE_Display_Init(void)
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED, "Not Initialized params.");
     }
 
+    ret = pthread_mutex_init(&mutex_sdl, NULL);
+    if (ret != ERROR_OK)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize mutex.");
+    }
+
     info_display = SDL_GetVideoInfo();
 
     moduleImageViewer.screen_w = info_display->current_w;
@@ -90,12 +98,14 @@ ERROR_T MODULE_Display_Init_Overlay(int width, int height, uint32_t format, uint
 {
     ERROR_T ret = ERROR_OK;
 
-    MODULE_Display_Clean();
-
     if((width == 0) || (height == 0))
     {
         return ERROR_NOT_OK;
     }
+
+    MODULE_Display_Clean();
+
+    pthread_mutex_lock(&mutex_sdl);
 
     printf("%s, Screen Overlay Init, %d x %d, format %d\n", __FUNCTION__, width, height, format);
 
@@ -162,6 +172,8 @@ ERROR_T MODULE_Display_Init_Overlay(int width, int height, uint32_t format, uint
 
     printf("overlay dimension calculated: %d x %d\n\n", moduleImageViewer.rect_overlay_dst.w, moduleImageViewer.rect_overlay_dst.h);
 
+    pthread_mutex_unlock(&mutex_sdl);
+
     return ret;
 }
 
@@ -206,6 +218,8 @@ static ERROR_T sScreenUpdate(moduleImageViewer_t* module, AVFrame* av_frame)
 
     AVFrame frameTarget;
 
+    pthread_mutex_lock(&mutex_sdl);
+
     SDL_Overlay* bitmap = module->overlay;
     SDL_LockYUVOverlay(bitmap);
 
@@ -239,6 +253,8 @@ static ERROR_T sScreenUpdate(moduleImageViewer_t* module, AVFrame* av_frame)
 
     sFPS_Update();
 
+    pthread_mutex_unlock(&mutex_sdl);
+
     return ret;
 }
 
@@ -247,6 +263,8 @@ static ERROR_T sScreenClean(moduleImageViewer_t* module)
     ERROR_T ret = ERROR_OK;
 
     SDL_Rect rect_fill = {0, 0, 0, 0};
+
+    pthread_mutex_lock(&mutex_sdl);
 
     rect_fill.x = 0;
     rect_fill.y = 0;
@@ -258,6 +276,8 @@ static ERROR_T sScreenClean(moduleImageViewer_t* module)
     //SDL_FillRect(module->screen, 0, 0);
     //SDL_Flip(module->screen);
     SDL_FillRect(module->screen, &rect_fill, white);
+
+    pthread_mutex_unlock(&mutex_sdl);
 
     return ret;
 }
