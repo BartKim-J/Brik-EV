@@ -69,7 +69,7 @@ extern ERROR_T  MODULE_Display_Init_Overlay(int width, int height, uint32_t src_
  *
  *  @note
  */
-extern void     MODULE_Display_Clean(void);
+extern ERROR_T  MODULE_Display_Clean(void);
 
 /** @brief
  *

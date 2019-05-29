@@ -76,7 +76,7 @@ ERROR_T MODULE_VideoHandler_Destroy(void)
     ret = pthread_cancel(thread_vh);
     if (ret != ERROR_OK)
     {
-        ERROR_SystemLog("Brik Failed to try cancle thread. \n\n");
+        ERROR_SystemLog("Brik Failed to try cancle Video Handler thread. \n\n");
     }
 
 
@@ -282,6 +282,8 @@ static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload)
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate frame.");
     }
 
+    MODULE_FrameHandler_MutexLock();
+
     ret = MODULE_Decoder_Write(packet, payload);
     if(ret < ERROR_OK)
     {
@@ -298,6 +300,7 @@ static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload)
         printf("READ :: %d\n",  ret);
     }
 
+    MODULE_FrameHandler_MutexUnlock();
 
     return ret;
 }

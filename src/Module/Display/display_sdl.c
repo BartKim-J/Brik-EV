@@ -177,9 +177,9 @@ ERROR_T MODULE_Display_Init_Overlay(int width, int height, uint32_t format, uint
     return ret;
 }
 
-void MODULE_Display_Clean(void)
+ERROR_T MODULE_Display_Clean(void)
 {
-    sScreenClean(&moduleImageViewer);
+    return sScreenClean(&moduleImageViewer);
 }
 
 ERROR_T MODULE_Display_Update(AVFrame* av_frame)

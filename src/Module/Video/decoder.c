@@ -113,27 +113,42 @@ bool MODULE_Decoder_Receive(frame_data_t* frameData)
     bool frameDecoded = false;
 
     if((frameData == NULL) || (frameData->frame == NULL) || (frameData->hw_frame == NULL) || \
-       (video_codec_context == NULL))
-    {
-        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED, "Not Initialized params.");
-    }
+        (video_codec_context == NULL))
+     {
+         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED, "Not Initialized params.");
+     }
 
     while(true)
     {
+        if((frameData->frame == NULL) || (frameData->hw_frame == NULL))
+        {
+            // This frame Already updated with free.
+            return AVERROR(EAGAIN);
+        }
+
         ret = avcodec_receive_frame(video_codec_context, frameData->frame);
         if((ret == AVERROR(EAGAIN)) || (ret == AVERROR_EOF))
         {
-            if(frameDecoded == false)
+            if(!frameDecoded)
             {
+                MODULE_FrameHandler_MutexUnlock();
                 Module_FrameHandler_BufferFree(frameData);
+                MODULE_FrameHandler_MutexLock();
             }
 
             return ret;
         }
         else if (ret < ERROR_OK)
         {
+            MODULE_FrameHandler_MutexUnlock();
             Module_FrameHandler_BufferFree(frameData);
             ERROR_StatusCheck(BRIK_STATUS_DECODE_ERROR, "Error during decoding");
+        }
+        else if((frameData->frame == NULL) || (frameData->hw_frame == NULL))
+        {
+            MODULE_FrameHandler_MutexUnlock();
+            Module_FrameHandler_BufferFree(frameData);
+            ERROR_StatusCheck(BRIK_STATUS_DECODE_ERROR, "Receive frame is null. why?");
         }
 
         if(frameData->frame->format == hw_pix_fmt)
@@ -141,6 +156,7 @@ bool MODULE_Decoder_Receive(frame_data_t* frameData)
             /* retrieve data from GPU to CPU */
             if ((ret = av_hwframe_transfer_data(frameData->hw_frame, frameData->frame, 0)) < 0)
             {
+                MODULE_FrameHandler_MutexUnlock();
                 Module_FrameHandler_BufferFree(frameData);
                 ERROR_StatusCheck(BRIK_STATUS_DECODE_ERROR, "Error transferring the data to system memory");
             }
@@ -167,6 +183,7 @@ bool MODULE_Decoder_Receive(frame_data_t* frameData)
         if(retMsg != ERROR_OK)
         {
             printf("Error while sending video stop message to frame handler: %d\n", retMsg);
+            ERROR_StatusCheck(BRIK_STATUS_UNKNOWN_MESSAGE ,"Error while sending video stop message to frame handler: FH_MSG_TYPE_VIDEO_UPDATE");
         }
     }
 

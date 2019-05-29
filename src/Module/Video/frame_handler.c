@@ -23,15 +23,16 @@ typedef struct threadqueue THQ;
 
 
 /* *** FRAME *** */
-#define LIMIT_FPD                       30 // frame packet delayed
+#define LIMIT_FPD                       5 // frame packet delayed
 #define LIMIT_VPD                       10 // video packet delayed
-#define LIMIT_SKIP_FRAME_MAX            3
+#define LIMIT_SKIP_FRAME_MAX            5
 
-#define FRAME_BUFFER_MAX                30
+#define FRAME_BUFFER_MAX                100
 
 /* ******* GLOBAL VARIABLE ******* */
 static pthread_t       thread_fh;
 static THQ             queue_fh;
+
 static pthread_mutex_t mutex_fh = PTHREAD_MUTEX_INITIALIZER;
 
 /* *** FRAME *** */
@@ -98,7 +99,7 @@ ERROR_T MODULE_FrameHandler_Destroy(void)
     ret = pthread_cancel(thread_fh);
     if (ret != ERROR_OK)
     {
-        ERROR_SystemLog("Brik Failed to try cancle thread. \n\n");
+        ERROR_SystemLog("Brik Failed to try cancle Frame Handler thread. \n\n");
     }
 
     ret = pthread_join(thread_fh, &tret);
@@ -135,6 +136,7 @@ frame_data_t* Module_FrameHandler_BufferAlloc(AVPacketPacket* packet, void* payl
              {
                  /* av frame value allocate & init */
                  frameBuffer[index].isOccupied    = true;
+
                  frameBuffer[index].frame         = av_frame_alloc();
                  frameBuffer[index].hw_frame      = av_frame_alloc();
 
@@ -161,7 +163,6 @@ frame_data_t* Module_FrameHandler_BufferAlloc(AVPacketPacket* packet, void* payl
         ERROR_StatusCheck(BRIK_STATUS_NOT_OK ,"Frame Buffer Over Index.");
     }
 
-
     pthread_mutex_unlock(&mutex_fh);
 
     return retFrame;
@@ -183,8 +184,9 @@ ERROR_T Module_FrameHandler_BufferFree(frame_data_t* frameData)
         {
             frameData->isOccupied    = false;
 
-            av_frame_free(&frameData->hw_frame);
             av_frame_free(&frameData->frame);
+            av_frame_free(&frameData->hw_frame);
+
             free(frameData->packet);
             free(frameData->payload);
 
@@ -205,6 +207,16 @@ ERROR_T Module_FrameHandler_BufferFree(frame_data_t* frameData)
     pthread_mutex_unlock(&mutex_fh);
 
     return ERROR_OK;
+}
+
+
+void MODULE_FrameHandler_MutexLock(void)
+{
+    pthread_mutex_lock(&mutex_fh);
+}
+void MODULE_FrameHandler_MutexUnlock(void)
+{
+    pthread_mutex_unlock(&mutex_fh);
 }
 
 long MODULE_FrameHandler_FPD(void)
@@ -240,6 +252,7 @@ static void thread_FrameHandler_Cleanup(void *arg)
 }
 static void* thread_FrameHandler(void *arg)
 {
+    ERROR_T ret = ERROR_OK;
     ERROR_T ret_queue = ERROR_OK;
 
     struct threadmsg message;
@@ -265,8 +278,11 @@ static void* thread_FrameHandler(void *arg)
         switch(message.msgtype)
         {
             case FH_MSG_TYPE_VIDEO_UPDATE:
-                sFrameBuffer_Display(frame_msg->frameData);
-                Module_FrameHandler_BufferFree(frame_msg->frameData);
+                ret = sFrameBuffer_Display(frame_msg->frameData);
+                if(ret != ERROR_NOT_OK)
+                {
+                    Module_FrameHandler_BufferFree(frame_msg->frameData);
+                }
                 break;
 
             case FH_MSG_TYPE_VIDEO_START:
@@ -331,8 +347,17 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
 
     AVFrame* frame = frameData->target_frame;
 
+    if(frame == NULL)
+    {
+        // This frame Already updated with free.
+        return ERROR_NOT_OK;
+    }
+
     if((frame->width == 0) || (frame->height == 0))
     {
+        printf("frame is invalid");
+        pthread_mutex_unlock(&mutex_fh);
+
         return ERROR_NOT_OK;
     }
 
@@ -350,13 +375,13 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
         skipMax    = 0;
     }
 
-#if false
+#if true
     // fps control.
-    if(vpd > LIMIT_VPD) // if delayed VPD.
+    if(fpd > LIMIT_FPD) // if delayed VPD.
     {
 
         // max_skip frame is TARGET_SKIP_FRAME_MAX.
-        skipMax = ((vpd / LIMIT_SKIP_FRAME_MAX) <= LIMIT_SKIP_FRAME_MAX) ? (vpd / 1): LIMIT_SKIP_FRAME_MAX;
+        skipMax = ((fpd / LIMIT_SKIP_FRAME_MAX) <= LIMIT_SKIP_FRAME_MAX) ? (fpd / 2): LIMIT_SKIP_FRAME_MAX;
 
 
         if(!skipFlag)
@@ -385,7 +410,7 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
     MODULE_Display_Update(frame);
 #endif
     fps = MODULE_Display_FPS();
-    fpd = MODULE_FrameHandler_FPD();;
+    fpd = allocatedFrame;;
     vpd = MODULE_VideoHandler_VPD();
 
 #if false // MODULE BACK TRACING.
@@ -400,6 +425,7 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
 #else
     printf("\n[%3ld]FPS [%3ld]FPD [%3ld]VPD", fps, fpd, vpd);
 #endif
+
 
     return ret;
 }

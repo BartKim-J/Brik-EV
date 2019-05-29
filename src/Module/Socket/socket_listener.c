@@ -75,7 +75,7 @@ ERROR_T MODULE_SocketListener_Destroy(void)
     ret = pthread_cancel(thread_sl);
     if (ret != ERROR_OK)
     {
-        ERROR_SystemLog("Brik Failed to try cancle thread. \n\n");
+        ERROR_SystemLog("Brik Failed to try cancle Video Handler thread. \n\n");
     }
 
     ret = pthread_join(thread_sl, &tret);

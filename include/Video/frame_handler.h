@@ -96,6 +96,15 @@ extern ERROR_T Module_FrameHandler_BufferFree(frame_data_t* frameData);
  *
  *  @note
  */
+extern void MODULE_FrameHandler_MutexLock(void);
+extern void MODULE_FrameHandler_MutexUnlock(void);
+
+/** @brief
+ *
+ *  @return frame_data_t pointer
+ *
+ *  @note
+ */
 extern long MODULE_FrameHandler_FPD(void);
 
 /** @brief
