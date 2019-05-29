@@ -28,7 +28,7 @@ static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload);
 static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload);
 
 /* *** FFMPEG HANDLE FRAME MESSAGE *** */
-static ERROR_T sFrameHandler_Stop(void);
+static ERROR_T sFrameHandler_SendMessage(FH_MSG_T msg);
 
 /* *** THREAD *** */
 static void    thread_VideoHandler_Cleanup(void *arg);
@@ -90,6 +90,11 @@ ERROR_T MODULE_VideoHandler_Destroy(void)
     }
 
     return ret;
+}
+
+long MODULE_VideoHandler_VPD(void)
+{
+    return thread_queue_length(&queue_vh);
 }
 
 ERROR_T MODULE_VideoHandler_SendMessage(void* msg, VH_MSG_T message_type)
@@ -160,7 +165,7 @@ static void* thread_VideoHandler(void *arg)
             case VH_MSG_TYPE_VIDEO_DISCONNECT:
                 MODULE_Decoder_Uninit();
 
-                sFrameHandler_Stop();
+                sFrameHandler_SendMessage(FH_MSG_TYPE_VIDEO_STOP);
                 break;
 
             default:
@@ -212,8 +217,6 @@ static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload)
     int32_t width_sps = 0;
     int32_t height_sps = 0;
 
-    MODULE_Display_Clean();
-
     sps_len = (p_extra[6] << 8) | p_extra[7];
 
     sps_parse(&p_extra[9], sps_len - 1, &width_sps, &height_sps);
@@ -250,6 +253,8 @@ static ERROR_T handle_video_codec(CodecDataPacket* packet, void* payload)
 
     free(packet);
     free(payload);
+
+    sFrameHandler_SendMessage(FH_MSG_TYPE_VIDEO_START);
 
     return ERROR_OK;
 }
@@ -297,7 +302,7 @@ static ERROR_T handle_video_data(AVPacketPacket* packet, void* payload)
     return ret;
 }
 
-static ERROR_T sFrameHandler_Stop(void)
+static ERROR_T sFrameHandler_SendMessage(FH_MSG_T msg)
 {
     ERROR_T ret = ERROR_OK;
     frame_data_msg_t * message;
@@ -308,7 +313,7 @@ static ERROR_T sFrameHandler_Stop(void)
         ERROR_StatusCheck(BRIK_STATUS_UNKNOWN_MESSAGE ,"Failed to allocate frame handler message: FH_MSG_TYPE_VIDEO_STOP.");
     }
 
-    ret = MODULE_FrameHandler_SendMessage((void*)message, FH_MSG_TYPE_VIDEO_STOP);
+    ret = MODULE_FrameHandler_SendMessage((void*)message, msg);
     if(ret != ERROR_OK)
     {
         printf("Error while sending video stop message to video handler: %d\n", ret);

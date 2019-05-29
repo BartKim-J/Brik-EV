@@ -23,12 +23,9 @@ typedef struct threadqueue THQ;
 
 
 /* *** FRAME *** */
-#define TARGET_MOBILE_FPS               45 // frame per second
-#define TARGET_DESKTOP_FPS              20 // frame per second
-
-#define TARGET_FPD                       5 // frame packet delayed
-
-#define TARGET_SKIP_FRAME_MAX            3
+#define LIMIT_FPD                       30 // frame packet delayed
+#define LIMIT_VPD                       10 // video packet delayed
+#define LIMIT_SKIP_FRAME_MAX            1
 
 #define FRAME_BUFFER_MAX                30
 
@@ -210,6 +207,15 @@ ERROR_T Module_FrameHandler_BufferFree(frame_data_t* frameData)
     return ERROR_OK;
 }
 
+long MODULE_FrameHandler_FPD(void)
+{
+    long counter = 0;
+    pthread_mutex_lock(&mutex_fh);
+    counter = allocatedFrame;
+    pthread_mutex_unlock(&mutex_fh);
+    return counter;
+}
+
 ERROR_T MODULE_FrameHandler_SendMessage(void* msg, FH_MSG_T message_type)
 {
     return thread_queue_add(&queue_fh, msg, (long)message_type);
@@ -263,6 +269,10 @@ static void* thread_FrameHandler(void *arg)
                 Module_FrameHandler_BufferFree(frame_msg->frameData);
                 break;
 
+            case FH_MSG_TYPE_VIDEO_START:
+                MODULE_Display_Clean();
+                break;
+
             case FH_MSG_TYPE_VIDEO_STOP:
                 sFrameBuffer_Cleanup();
 
@@ -311,8 +321,9 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
 {
     ERROR_T ret = ERROR_OK;
 
-    static uint32_t            fpd = 0;
-    static uint32_t            fps = 0;
+    static long            vpd = 0;
+    static long            fpd = 0;
+    static long            fps = 0;
 
     static bool           skipFlag = 0;
     static uint32_t       skipCnt  = 0;
@@ -340,11 +351,11 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
     }
 
     // fps control.
-    if(fpd > TARGET_FPD) // if delayed FPD.
+    if(vpd > LIMIT_VPD) // if delayed VPD.
     {
 
         // max_skip frame is TARGET_SKIP_FRAME_MAX.
-        skipMax = ((fpd / TARGET_SKIP_FRAME_MAX) <= TARGET_SKIP_FRAME_MAX) ? (fpd / 1): TARGET_SKIP_FRAME_MAX;
+        skipMax = ((vpd / LIMIT_SKIP_FRAME_MAX) <= LIMIT_SKIP_FRAME_MAX) ? (vpd / 1): LIMIT_SKIP_FRAME_MAX;
 
 
         if(!skipFlag)
@@ -364,14 +375,15 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
             }
         }
     }
-    else // if not delayed FPD
+    else // if not delayed VPD
     {
         // always frame updated.
         MODULE_Display_Update(frame);
     }
 
     fps = MODULE_Display_FPS();
-    fpd = allocatedFrame;
+    fpd = MODULE_FrameHandler_FPD();;
+    vpd = MODULE_VideoHandler_VPD();
 
 #if false // MODULE BACK TRACING.
     // Data Log
@@ -383,7 +395,7 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
     printf("\n[%3d]FPD\n", fpd);
     ERROR_SystemLog("\n\n- - - - - - - - - - - - - - - - - - - - - - - - - \n");
 #else
-    printf("\n[%3d]FPS [%3d]FPD", fps, fpd);
+    printf("\n[%3ld]FPS [%3ld]FPD [%3ld]VPD", fps, fpd, vpd);
 #endif
 
     return ret;

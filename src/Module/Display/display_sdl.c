@@ -78,7 +78,7 @@ ERROR_T MODULE_Display_Init(void)
 
     /* Set Video Mode */
     moduleImageViewer.screen = SDL_SetVideoMode(info_display->current_w, info_display->current_h,
-                                32, SDL_FULLSCREEN | SDL_HWSURFACE | SDL_HWACCEL);
+                                32, SDL_FULLSCREEN | SDL_HWSURFACE | SDL_HWACCEL /*| SDL_DOUBLEBUF */);
     if(moduleImageViewer.screen == NULL)
     {
         printf("Failed to allocate Video screen surface\n");
@@ -141,8 +141,8 @@ ERROR_T MODULE_Display_Init_Overlay(int width, int height, uint32_t format, uint
                                                width,
                                                height,
                                                AV_PIX_FMT_YUV420P,
-                                               SWS_BILINEAR,
-                                               //SWS_FAST_BILINEAR,
+                                               //SWS_BILINEAR,
+                                               SWS_FAST_BILINEAR,
                                                NULL,
                                                NULL,
                                                NULL

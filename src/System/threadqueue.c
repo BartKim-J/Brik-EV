@@ -201,7 +201,7 @@ int thread_queue_cleanup(struct threadqueue *queue, int freedata)
 
 long thread_queue_length(struct threadqueue *queue)
 {
-    long counter;
+    long counter = 0;
     // get the length properly
     pthread_mutex_lock(&queue->mutex);
     counter = queue->length;

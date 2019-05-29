@@ -53,6 +53,14 @@ extern ERROR_T MODULE_VideoHandler_Destroy(void);
 
 /** @brief
  *
+ *  @return ERROR_T
+ *
+ *  @note
+ */
+extern long MODULE_VideoHandler_VPD(void);
+
+/** @brief
+ *
  *  @param msg
  *  @param message_type
  *

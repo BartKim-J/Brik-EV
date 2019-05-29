@@ -19,9 +19,9 @@
 #define __FRAME_HANDLER_H_
 
 typedef enum fh_msg_type {
-    FH_MSG_TYPE_VIDEO_CODEC       = 1,
-    FH_MSG_TYPE_VIDEO_UPDATE      = 2,
-    FH_MSG_TYPE_VIDEO_STOP        = 3,
+    FH_MSG_TYPE_VIDEO_START       = 1,
+    FH_MSG_TYPE_VIDEO_STOP        = 2,
+    FH_MSG_TYPE_VIDEO_UPDATE      = 3,
     FH_MSG_TYPE_VIDEO_NONE,
 } FH_MSG_T;
 
@@ -89,6 +89,14 @@ extern frame_data_t* Module_FrameHandler_BufferAlloc(AVPacketPacket* packet, voi
  *  @note
  */
 extern ERROR_T Module_FrameHandler_BufferFree(frame_data_t* frameData);
+
+/** @brief
+ *
+ *  @return frame_data_t pointer
+ *
+ *  @note
+ */
+extern long MODULE_FrameHandler_FPD(void);
 
 /** @brief
  *
