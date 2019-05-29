@@ -83,7 +83,7 @@ ERROR_T MODULE_Decoder_Write(AVPacketPacket* packet, void* payload)
         ERROR_StatusCheck(BRIK_STATUS_NOT_OK, "Error setting data to a packet");
     }
 
-    av_packet->pts = packet->avpacket.timestamp;
+    //av_packet->pts = packet->avpacket.timestamp;
 
     ret = avcodec_send_packet(video_codec_context, av_packet);
     if (ret < ERROR_OK)

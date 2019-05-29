@@ -11,7 +11,7 @@
 #ifndef __CONNECT_MGMT_H_
 #define __CONNECT_MGMT_H_
 
-#if false // Video Only
+#if true // Video Only
 #define MAX_CONNECTION  2 //CONTROL + VIDEO ( 2 CONNECTION = 1 SET )
 #else    // Video and Audio
 #define MAX_CONNECTION  4 //CONTROL + VIDEO + AUDIO + BACKCHANNEL( 4 CONNECTION = 1 SET )
