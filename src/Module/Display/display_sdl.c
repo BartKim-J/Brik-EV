@@ -13,7 +13,7 @@
 // How many frames time values to keep
 // The higher the value the smoother the result is...
 // Don't make it 0 or less :)
-#define FRAME_VALUES 10
+#define FRAME_VALUES 30
 
 /* ******* GLOBAL VARIABLE ******* */
 static pthread_mutex_t mutex_sdl = PTHREAD_MUTEX_INITIALIZER;
@@ -217,10 +217,18 @@ static ERROR_T sScreenUpdate(moduleImageViewer_t* module, AVFrame* av_frame)
     ERROR_T ret = ERROR_OK;
 
     AVFrame frameTarget;
+    SDL_Overlay* overlaybuffer = NULL;
+    SDL_Overlay* bitmap        = NULL;
+    overlaybuffer = SDL_CreateYUVOverlay(moduleImageViewer.overlay->w, moduleImageViewer.overlay->h,
+                                                      SDL_YV12_OVERLAY, moduleImageViewer.screen);
+    if(overlaybuffer == NULL)
+    {
+        printf("Failed to allocate video overlay: %s\n", SDL_GetError());
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to allocate video overlay.");
+    }
 
-    pthread_mutex_lock(&mutex_sdl);
+    bitmap = overlaybuffer;
 
-    SDL_Overlay* bitmap = module->overlay;
     SDL_LockYUVOverlay(bitmap);
 
 #if true
@@ -251,9 +259,14 @@ static ERROR_T sScreenUpdate(moduleImageViewer_t* module, AVFrame* av_frame)
 
     SDL_DisplayYUVOverlay(bitmap, &(module->rect_overlay_dst));
 
+    if(overlaybuffer != NULL)
+     {
+         SDL_FreeYUVOverlay(overlaybuffer);
+         overlaybuffer = NULL;
+     }
+
     sFPS_Update();
 
-    pthread_mutex_unlock(&mutex_sdl);
 
     return ret;
 }

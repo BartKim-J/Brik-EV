@@ -21,16 +21,16 @@ typedef struct threadqueue THQ;
 #define UNALLOCATED_RESOLUTION           0
 #define UNALLOCATED_FORMAT               0
 
+#define FRAME_BUFFER_MAX               254
+#define FRAME_THREAD_MAX                 3
 
 /* *** FRAME *** */
-#define LIMIT_FPD                       12 // frame packet delayed
+#define LIMIT_FPD    (FRAME_THREAD_MAX * 2) // frame packet delayed
 #define LIMIT_VPD                       10 // video packet delayed
 #define LIMIT_SKIP_FRAME_VALUE           1
 
-#define FRAME_BUFFER_MAX               254
-
 /* ******* GLOBAL VARIABLE ******* */
-static pthread_t       thread_fh;
+static pthread_t       thread_fh[FRAME_THREAD_MAX];
 static THQ             queue_fh;
 
 
@@ -61,6 +61,7 @@ static ERROR_T  sFrameBuffer_Display(frame_data_t* frameData);
 ERROR_T MODULE_FrameHandler_Init(void)
 {
     ERROR_T ret = ERROR_OK;
+    int   index = 0;
 
     allocatedFrame = 0;
 
@@ -71,10 +72,13 @@ ERROR_T MODULE_FrameHandler_Init(void)
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize frame queue.");
     }
 
-    ret = pthread_create(&thread_fh, NULL, thread_FrameHandler, NULL);
-    if(ret != ERROR_OK)
+    for(index = 0; index < FRAME_THREAD_MAX; index++)
     {
-        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize thread.");
+        ret = pthread_create(&thread_fh[index], NULL, thread_FrameHandler, NULL);
+        if(ret != ERROR_OK)
+        {
+            ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize thread.");
+        }
     }
 
     ret = pthread_mutex_init(&mutex_fh, NULL);
@@ -90,25 +94,28 @@ ERROR_T MODULE_FrameHandler_Destroy(void)
 {
     ERROR_T ret  = ERROR_OK;
     void*   tret = NULL;
+    int    index = 0;
 
     thread_queue_cleanup(&queue_fh, true);
     if(ret != ERROR_OK)
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize frame queue.");
     }
-
-    ret = pthread_cancel(thread_fh);
-    if (ret != ERROR_OK)
+    for(index = 0; index < FRAME_THREAD_MAX; index++)
     {
-        ERROR_SystemLog("Brik Failed to try cancle thread. \n\n");
-    }
-
-    ret = pthread_join(thread_fh, &tret);
-    if (ret != ERROR_NOT_OK)
-    {
-        if(tret != PTHREAD_CANCELED)
+        ret = pthread_cancel(thread_fh[index]);
+        if (ret != ERROR_OK)
         {
-            ERROR_SystemLog("Brik Failed Frame Handler Thread Clenaup. \n\n");
+            ERROR_SystemLog("Brik Failed to try cancle thread. \n\n");
+        }
+
+        ret = pthread_join(thread_fh[index], &tret);
+        if (ret != ERROR_NOT_OK)
+        {
+            if(tret != PTHREAD_CANCELED)
+            {
+                ERROR_SystemLog("Brik Failed Frame Handler Thread Clenaup. \n\n");
+            }
         }
     }
 
