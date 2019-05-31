@@ -25,9 +25,9 @@ typedef struct threadqueue THQ;
 #define FRAME_THREAD_MAX                 3
 
 /* *** FRAME *** */
-#define LIMIT_FPD    (FRAME_THREAD_MAX * 2) // frame packet delayed
+#define LIMIT_FPD         FRAME_THREAD_MAX // frame packet delayed
 #define LIMIT_VPD                       10 // video packet delayed
-#define LIMIT_SKIP_FRAME_VALUE           1
+#define LIMIT_SKIP_FRAME_VALUE        (0.7)
 
 /* ******* GLOBAL VARIABLE ******* */
 static pthread_t       thread_fh[FRAME_THREAD_MAX];
@@ -178,16 +178,17 @@ frame_data_t* Module_FrameHandler_BufferAlloc(AVPacketPacket* packet, void* payl
 
 ERROR_T Module_FrameHandler_BufferFree(frame_data_t* frameData)
 {
-    pthread_mutex_lock(&mutex_fh);
+
 
     if(frameData == NULL)
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Invalied frame.");
     }
 
+    pthread_mutex_lock(&mutex_fh);
+
     if(allocatedFrame > 0)
     {
-
         if(frameData->isOccupied)
         {
             frameData->isOccupied    = false;

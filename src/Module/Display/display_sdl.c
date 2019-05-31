@@ -260,13 +260,12 @@ static ERROR_T sScreenUpdate(moduleImageViewer_t* module, AVFrame* av_frame)
     SDL_DisplayYUVOverlay(bitmap, &(module->rect_overlay_dst));
 
     if(overlaybuffer != NULL)
-     {
-         SDL_FreeYUVOverlay(overlaybuffer);
-         overlaybuffer = NULL;
-     }
+    {
+        SDL_FreeYUVOverlay(overlaybuffer);
+        overlaybuffer = NULL;
+    }
 
     sFPS_Update();
-
 
     return ret;
 }
