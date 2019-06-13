@@ -152,8 +152,8 @@ set(
 
 )
 
-# Command #
-
+################### Target Command ###################
+# remove CMakeFiles and Build file #
 add_custom_target(all_clean
     sudo rm -rf
     ${PRJ_ROOT_PATH}/CMakeFiles
@@ -162,21 +162,42 @@ add_custom_target(all_clean
     ${PRJ_ROOT_PATH}/Makefile
 )
 
+# run with debug mod(gdb) #
 add_custom_target(gdb
     make all &&
     sudo sh ${PRJ_SHELL_PATH}/debug.sh
 )
 
+# run without debug mod # 
 add_custom_target(run
     make all &&
     sudo sh ${PRJ_SHELL_PATH}/run.sh
 )
 
+# run forwader #
 add_custom_target(airplay
-    sudo LD_LIBRARY_PATH=.:/home/brik/brik_ev_c/airplay_server/bin/lib/ 
-    /home/brik/brik_ev_c/airplay_server/bin/Airplay-ConnectivityForwarder -hqw 1920 -hqh 1080 -lqw 640 -lqh 360
+    sudo ${PRJ_ROOT_PATH}/airplay_server/Airplay-ConnectivityForwarder -hqw 1920 -hqh 1080 -lqw 640 -lqh 360
 )
 
+# libc6 install #
+add_custom_target(install_libc6_2_23
+    sudo dpkg -i ${PRJ_ROOT_PATH}/lib/libc6/libc6_2.23-0ubuntu11_armhf.deb
+)
+
+add_custom_target(install_libc6_2_27
+    sudo dpkg -i ${PRJ_ROOT_PATH}/lib/libc6/libc6_2.27-3ubuntu1_armhf.deb
+)
+
+# update linux config file #
+add_custom_target(update_hostapd
+    sudo cp ${PRJ_ROOT_PATH}/lib/internet/hostapd.conf /etc/hostapd/hostapd.conf
+)
+
+add_custom_target(update_dnsmasq
+    sudo cp ${PRJ_ROOT_PATH}/lib/internet/dnsmasq.conf /etc/dnsmasq.conf
+)
+
+################### Target Setting ###################
 # install #
 install( DIRECTORY ${PRJ_ROOT_PATH}
     DESTINATION ${PRJ_INSTALLED_PATH}
@@ -184,7 +205,6 @@ install( DIRECTORY ${PRJ_ROOT_PATH}
     PATTERN .svn EXCLUDE
 )
 
-################### Target Setting ###################
 # Install exe file #
 add_executable(${PRJ_BINARY_NAME} ${Source})
 
