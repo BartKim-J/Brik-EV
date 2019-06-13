@@ -179,22 +179,30 @@ add_custom_target(airplay
     sudo ${PRJ_ROOT_PATH}/airplay_server/Airplay-ConnectivityForwarder -hqw 1920 -hqh 1080 -lqw 640 -lqh 360
 )
 
-# libc6 install #
+# install #
 add_custom_target(install_libc6_2_23
-    sudo dpkg -i ${PRJ_ROOT_PATH}/lib/libc6/libc6_2.23-0ubuntu11_armhf.deb
+    sudo dpkg -i ${PRJ_ROOT_PATH}/lib/install/libc6/libc6_2.23-0ubuntu11_armhf.deb
 )
 
 add_custom_target(install_libc6_2_27
-    sudo dpkg -i ${PRJ_ROOT_PATH}/lib/libc6/libc6_2.27-3ubuntu1_armhf.deb
+    sudo dpkg -i ${PRJ_ROOT_PATH}/lib/install/libc6/libc6_2.27-3ubuntu1_armhf.deb
+)
+
+add_custom_target(install_package
+    sudo sh ${PRJ_ROOT_PATH}/lib/install/install_package.sh
 )
 
 # update linux config file #
 add_custom_target(update_hostapd
-    sudo cp ${PRJ_ROOT_PATH}/lib/internet/hostapd.conf /etc/hostapd/hostapd.conf
+    sudo cp ${PRJ_ROOT_PATH}/lib/config/internet/hostapd.conf /etc/hostapd/hostapd.conf
 )
 
 add_custom_target(update_dnsmasq
-    sudo cp ${PRJ_ROOT_PATH}/lib/internet/dnsmasq.conf /etc/dnsmasq.conf
+    sudo cp ${PRJ_ROOT_PATH}/lib/config/internet/dnsmasq.conf /etc/dnsmasq.conf
+)
+
+add_custom_target(update_udev
+    sudo cp ${PRJ_ROOT_PATH}/lib/config/udev/10-local.rules /etc/udev/rules.d/10-local.rules
 )
 
 ################### Target Setting ###################
