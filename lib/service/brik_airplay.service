@@ -1,0 +1,16 @@
+[Unit]
+Description=Brik Airplay Service
+Requires=dnsmasq.service
+After=dnsmasq.service
+
+[Service]
+User=root
+Group=root
+Type=simple
+
+WorkingDirectory=/home/brik
+ExecStart=/brik/brik_ev_c/airplay_server/Airplay-ConnectivityForwarder
+Restart=always
+
+[Install]
+WantedBy=dnsmasq.service

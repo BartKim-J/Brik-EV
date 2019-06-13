@@ -1,0 +1,17 @@
+[Unit]
+Description=Brik Service
+Requires=networking.service
+After=networking.service
+
+[Service]
+User=root
+Group=root
+Type=simple
+
+WorkingDirectory=/home/brik
+ExecStart=/brik/brik_ev_c/lib/shell/brik_exe.sh
+Restart=always
+
+[Install]
+WantedBy=networking.service
+

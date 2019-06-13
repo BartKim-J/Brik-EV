@@ -176,35 +176,35 @@ static ERROR_T sDestoryModuels(void)
     ret = MODULE_Display_Destroy();
     if(ret != ERROR_OK)
     {
-        return ret;
+        //return ret;
     }
 
     ERROR_SystemLog("Brik Destroy Packet Handler Moduels... \n\n");
     ret = MODULE_PacketHandler_Destroy();
     if(ret != ERROR_OK)
     {
-        return ret;
+        //return ret;
     }
 
     ERROR_SystemLog("Brik Destroy Video Handler Moduels... \n\n");
     ret = MODULE_VideoHandler_Destroy();
     if(ret != ERROR_OK)
     {
-        return ret;
+        //return ret;
     }
 
     ERROR_SystemLog("Brik Destroy Frame Handler Moduels... \n\n");
     ret = MODULE_FrameHandler_Destroy();
     if(ret != ERROR_OK)
     {
-        return ret;
+        //return ret;
     }
 
     ERROR_SystemLog("Brik Destroy Socket Listener Moduels... \n\n");
     ret = MODULE_SocketListener_Destroy();
     if(ret != ERROR_OK)
     {
-        return ret;
+        //return ret;
     }
     /*
         PACKET HANDLER

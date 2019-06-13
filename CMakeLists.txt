@@ -181,11 +181,11 @@ add_custom_target(airplay
 
 # install #
 add_custom_target(install_libc6_2_23
-    sudo dpkg -i ${PRJ_ROOT_PATH}/lib/install/libc6/libc6_2.23-0ubuntu11_armhf.deb
+    sudo dpkg --install --auto-deconfigure ${PRJ_ROOT_PATH}/lib/install/libc6/libc6_2.23-0ubuntu11_armhf.deb
 )
 
 add_custom_target(install_libc6_2_27
-    sudo dpkg -i ${PRJ_ROOT_PATH}/lib/install/libc6/libc6_2.27-3ubuntu1_armhf.deb
+    sudo dpkg --install --auto-deconfigure ${PRJ_ROOT_PATH}/lib/install/libc6/libc6_2.27-3ubuntu1_armhf.deb
 )
 
 add_custom_target(install_package
@@ -203,6 +203,30 @@ add_custom_target(update_dnsmasq
 
 add_custom_target(update_udev
     sudo cp ${PRJ_ROOT_PATH}/lib/config/udev/10-local.rules /etc/udev/rules.d/10-local.rules
+)
+
+
+
+# Service #
+add_custom_target(service_update
+    sudo cp ${PRJ_ROOT_PATH}/lib/service/brik.service /etc/systemd/system/brik.service &&
+    sudo cp ${PRJ_ROOT_PATH}/lib/service/brik_airplay.service /etc/systemd/system/brik_airplay.service &&
+    sudo systemctl daemon-reload
+)
+
+add_custom_target(service_enable
+    sudo systemctl enable brik.service &&
+    sudo systemctl enable brik_airplay.service 
+)
+
+add_custom_target(service_restart
+    sudo systemctl restart brik.service &&
+    sudo systemctl restart brik_airplay.service 
+)
+
+add_custom_target(service_disable
+    sudo systemctl disable brik.service &&
+    sudo systemctl disable brik_airplay.service 
 )
 
 ################### Target Setting ###################
