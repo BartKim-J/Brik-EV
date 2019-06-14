@@ -15,7 +15,7 @@
 /* ******* STATIC DEFINE ******* */
 typedef struct connection_status {
     bool    isOccupied;
-    int32_t connection;
+    int32_t connection_client;
     int32_t connection_type;
     int32_t session_id;
 } connection_status_t;
@@ -38,7 +38,7 @@ int MODULE_ConnectManager_GetCount(void)
     return connection_count;
 }
 
-ERROR_T MODULE_ConnectManager_Open(int connection, int32_t connection_type, int32_t session_id)
+ERROR_T MODULE_ConnectManager_Open(int connection_client, int32_t connection_type, int32_t session_id)
 {
     int i = 0;
 
@@ -46,32 +46,33 @@ ERROR_T MODULE_ConnectManager_Open(int connection, int32_t connection_type, int3
     {
         if(!conn_status[i].isOccupied)
         {
-            conn_status[i].isOccupied      = true;
-            conn_status[i].connection      = connection;
-            conn_status[i].connection_type = connection_type;
-            conn_status[i].session_id      = session_id;
+            conn_status[i].isOccupied        = true;
+            conn_status[i].connection_client = connection_client;
+            conn_status[i].connection_type   = connection_type;
+            conn_status[i].session_id        = session_id;
 
             connection_count++;
 
             return ERROR_OK;
         }
     }
+
     return ERROR_NOT_OK;
 }
 
-ERROR_T MODULE_ConnectManager_Close(int32_t connection)
+ERROR_T MODULE_ConnectManager_Close(int32_t connection_client)
 {
     int i = 0;
 
     for(i = 0; i< MAX_CONNECTION; i++)
     {
-        if((conn_status[i].isOccupied) && (conn_status[i].connection == connection))
+        if((conn_status[i].isOccupied) && (conn_status[i].connection_client == connection_client))
         {
-            close(conn_status[i].connection);
-            conn_status[i].isOccupied      = false;
-            conn_status[i].connection      = CONN_PARAM_UNSET;
-            conn_status[i].connection_type = CONN_PARAM_UNSET;
-            conn_status[i].session_id      = CONN_PARAM_UNSET;
+            close(conn_status[i].connection_client);
+            conn_status[i].isOccupied        = false;
+            conn_status[i].connection_client = CONN_PARAM_UNSET;
+            conn_status[i].connection_type   = CONN_PARAM_UNSET;
+            conn_status[i].session_id        = CONN_PARAM_UNSET;
 
             connection_count--;
 
@@ -89,11 +90,11 @@ ERROR_T MODULE_ConnectManager_CloseAll(void)
     {
         if (conn_status[i].isOccupied)
         {
-            close(conn_status[i].connection);
-            conn_status[i].isOccupied      = false;
-            conn_status[i].connection      = CONN_PARAM_UNSET;
-            conn_status[i].connection_type = CONN_PARAM_UNSET;
-            conn_status[i].session_id      = CONN_PARAM_UNSET;
+            close(conn_status[i].connection_client);
+            conn_status[i].isOccupied        = false;
+            conn_status[i].connection_client = CONN_PARAM_UNSET;
+            conn_status[i].connection_type   = CONN_PARAM_UNSET;
+            conn_status[i].session_id        = CONN_PARAM_UNSET;
 
             connection_count--;
         }

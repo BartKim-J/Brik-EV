@@ -25,7 +25,7 @@ inline void sDebugging(void);
 static void sReboot(void);
 static void sExit(void);
 
-static bool    isRebooting = false;
+static bool isRebooting = false;
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
@@ -69,7 +69,7 @@ void sDebugging(void)
 {
     ERROR_SystemLog("Brik Breakpoint. \n\n");
 
-    while(true);
+    while(true); /* Stuck here */
 
     sExit();
     sReboot();
@@ -102,7 +102,7 @@ static void sReboot(void)
         ERROR_SystemLog("System Reboot!! \n\n");
 
         sync();
-        reboot(LINUX_REBOOT_CMD_POWER_OFF);
+        reboot(LINUX_REBOOT_CMD_POWER_OFF); /* @TODO reboot */
         exit(ERROR_NOT_OK);
     }
 

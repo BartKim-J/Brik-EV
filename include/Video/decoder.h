@@ -15,11 +15,12 @@
  * @name Decoder Module
  *
  *////@{
-/** @brief
+
+/** @brief Decoder init
  *
- *  @param
- *  @param
- *  @param
+ *  @param packet
+ *  @param extradata
+ *  @param extra_len
  *
  *  @return ERROR_T
  *
@@ -27,7 +28,7 @@
  */
 extern ERROR_T MODULE_Decoder_Init(CodecDataPacket* packet, void* extradata, int extra_len);
 
-/** @brief
+/** @brief Decoder uninit
  *
  *  @return ERROR_T
  *
@@ -35,10 +36,10 @@ extern ERROR_T MODULE_Decoder_Init(CodecDataPacket* packet, void* extradata, int
  */
 extern ERROR_T MODULE_Decoder_Uninit(void);
 
-/** @brief
+/** @brief decoding packet data
  *
- *  @param
- *  @param
+ *  @param packet
+ *  @param payload
  *
  *  @return ERROR_T
  *
@@ -46,11 +47,9 @@ extern ERROR_T MODULE_Decoder_Uninit(void);
  */
 extern ERROR_T MODULE_Decoder_Write(AVPacketPacket* packet, void* payload);
 
-/** @brief
+/** @brief get decoded frame data
  *
- *  @param
- *  @param
- *  @param
+ *  @param frameData
  *
  *  @return ERROR_T
  *

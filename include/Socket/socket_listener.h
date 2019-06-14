@@ -12,7 +12,13 @@
 #ifndef __SOCKET_LISTENER_H_
 #define __SOCKET_LISTENER_H_
 
-/** @brief
+/*************************************************************
+ * @name Socket Listner Module API.
+ * @note use 1 thread.
+ *
+ *////@{
+
+/** @brief Socket Linster Module Init.
  *
  *  @return ERROR_T
  *
@@ -20,12 +26,14 @@
  */
 extern ERROR_T MODULE_SocketListener_Init(void);
 
-/** @brief
+/** @brief Socket Linster Destroy Init.
  *
  *  @return ERROR_T
  *
  *  @note
  */
 extern ERROR_T MODULE_SocketListener_Destroy(void);
+
+/*************************************************************@}*/
 
 #endif

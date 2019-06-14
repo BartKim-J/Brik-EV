@@ -18,6 +18,11 @@
 #ifndef __FRAME_HANDLER_H_
 #define __FRAME_HANDLER_H_
 
+/*************************************************************
+ * @name Frame Handler Strucuture
+ *
+ *////@{
+
 typedef enum fh_msg_type {
     FH_MSG_TYPE_VIDEO_START       = 1,
     FH_MSG_TYPE_VIDEO_STOP        = 2,
@@ -28,29 +33,27 @@ typedef enum fh_msg_type {
 typedef struct frame_data {
     bool isOccupied;
 
-    AVFrame *frame;
-    AVFrame *hw_frame;
+    AVFrame *frame;        /* software frame */
+    AVFrame *hw_frame;     /* hardware frame. ONLY USED WITH Hardware decoder */
 
-    AVFrame *target_frame; // Just for pointing frame.
+    AVFrame *target_frame; /* decoded frame */
 
-    void* packet;
-    void* payload;
+    void* packet;          /*  */
+    void* payload;         /*  */
 
 } frame_data_t;
 
 typedef struct frame_data_msg {
-    void* frameData;
+    void* frameData;       /* frameData pointer */
 } frame_data_msg_t;
 
+/*************************************************************@}*/
+
 /*************************************************************
- * @name Video Handler Module
+ * @name Frame Handler Module
  *
  *////@{
-/*************************************************************
- * @name Video Handler Module
- *
- *////@{
-/** @brief
+/** @brief frame handler init.
  *
  *  @return ERROR_T
  *
@@ -58,7 +61,7 @@ typedef struct frame_data_msg {
  */
 extern ERROR_T MODULE_FrameHandler_Init(void);
 
-/** @brief
+/** @brief frame handler destroy.
  *
  *  @return ERROR_T
  *
@@ -66,7 +69,7 @@ extern ERROR_T MODULE_FrameHandler_Init(void);
  */
 extern ERROR_T MODULE_FrameHandler_Destroy(void);
 
-/** @brief
+/** @brief frame handler buffer cleanup.
  *
  *  @return ERROR_T
  *
@@ -74,7 +77,7 @@ extern ERROR_T MODULE_FrameHandler_Destroy(void);
  */
 extern ERROR_T MODULE_FrameHandler_Cleanup(void);
 
-/** @brief
+/** @brief frame handler buffer push
  *
  *  @return frame_data_t pointer
  *
@@ -82,9 +85,9 @@ extern ERROR_T MODULE_FrameHandler_Cleanup(void);
  */
 extern frame_data_t* Module_FrameHandler_BufferAlloc(AVPacketPacket* packet, void* payload);
 
-/** @brief
+/** @brief frame handler buffer pop
  *
- *  @return frame_data_t pointer
+ *  @return ERROR_T
  *
  *  @note
  */
@@ -94,20 +97,28 @@ extern ERROR_T Module_FrameHandler_BufferFree(frame_data_t* frameData);
  *
  *  @return frame_data_t pointer
  *
- *  @note
+ *  @warnning change process it take so many time.
  */
 extern void MODULE_FrameHandler_MutexLock(void);
-extern void MODULE_FrameHandler_MutexUnlock(void);
 
 /** @brief
  *
- *  @return frame_data_t pointer
+ *  @return void
+ *
+ *  @note
+ *  @warnning change process it take so many time.
+ */
+extern void MODULE_FrameHandler_MutexUnlock(void);
+
+/** @brief get frame buffer delayed.
+ *
+ *  @return  FPD(frame buffer per delayed)
  *
  *  @note
  */
 extern long MODULE_FrameHandler_FPD(void);
 
-/** @brief
+/** @brief send message to frame buffer handler.
  *
  *  @param msg
  *  @param message_type
@@ -119,5 +130,5 @@ extern long MODULE_FrameHandler_FPD(void);
 extern ERROR_T MODULE_FrameHandler_SendMessage(void* msg, FH_MSG_T message_type);
 
 /*************************************************************@}*/
-#endif /* VIDEO_HANDLER */
+#endif /* FRAME_HANDLER */
 /**@}*/

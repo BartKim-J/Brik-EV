@@ -94,9 +94,9 @@ extern ERROR_T  MODULE_Display_Destroy(void);
  *
  *////@{
 #ifdef DISPLAY_TYPE_SDL
-/** @brief
+/** @brief get frame per second.
  *
- *  @return ERROR_T
+ *  @return FPS(Frame per second)
  *
  *  @note
  */

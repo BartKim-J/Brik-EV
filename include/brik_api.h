@@ -11,7 +11,12 @@
 #ifndef __BRIK_API_H_
 #define __BRIK_API_H_
 
-/* *** Standard *** */
+/*************************************************************
+ * @name Locale Library
+ *
+ *////@{
+
+/* *** Stantard System *** */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -34,6 +39,13 @@
 #include <pthread.h>
 #include <unistd.h>
 
+///*************************************************************@}*/
+
+/*************************************************************
+ * @name External Library
+ *
+ *////@{
+
 /* *** SDL *** */
 #ifdef SDL2
 #include <SDL2/SDL.h>
@@ -50,7 +62,13 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 
-/* *** Brik *** */
+/*************************************************************@}*/
+
+/*************************************************************
+ * @name Brik Library
+ *
+ *////@{
+
 #include "brik_utils.h"
 
 /* *** System *** */
@@ -78,12 +96,6 @@
 #include "images.h"
 #include "decoder.h"
 
-
-
-
-
-
-
-
+/*************************************************************@}*/
 
 #endif

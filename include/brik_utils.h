@@ -13,6 +13,7 @@
 #ifndef __BRIK_UTILS_H_
 #define __BRIK_UTILS_H_
 
+
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif /* MIN */
@@ -23,9 +24,8 @@
 
 
 #ifndef bool
-
 typedef int bool;
-#define true 1
+#define true  1
 #define false 0
 #endif/* bool */
 
@@ -33,6 +33,13 @@ typedef int bool;
 #define UNUSED(expr) do { (void)(expr); } while (0)
 #endif
 
+/*************************************************************
+ * @name sps parser
+ * @TODO change place
+ *////@{
+
 extern void sps_parse(const unsigned char * pStart, unsigned short nLen, int32_t *frame_width, int32_t *frame_height);
+
+/*************************************************************@}*/
 
 #endif

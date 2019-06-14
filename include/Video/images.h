@@ -11,17 +11,24 @@
 #ifndef __IMAGES_H_
 #define __IMAGES_H_
 
+/*************************************************************
+ * @name Images Struture
+ *
+ *////@{
 typedef enum image_resource {
     INTRO_IMAGE,
     ERROR_IMAGE,
     IMAGE_COUNT
 } imageResoure_t;
 
+/*************************************************************@}*/
+
 /*************************************************************
  * @name Images Module
  *
  *////@{
-/** @brief
+
+/** @brief Display to screen from image buffers
  *
  *  @return ERROR_T
  *
@@ -29,7 +36,7 @@ typedef enum image_resource {
  */
 extern ERROR_T MODULE_Image_UpdateImage(imageResoure_t imgIndex);
 
-/** @brief
+/** @brief load to image buffer from all image files.
  *
  *  @return ERROR_T
  *
@@ -37,7 +44,7 @@ extern ERROR_T MODULE_Image_UpdateImage(imageResoure_t imgIndex);
  */
 extern ERROR_T MODULE_Image_LoadImages(void);
 
-/** @brief
+/** @brief cleanup all image buffers
  *
  *  @return ERROR_T
  *

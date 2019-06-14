@@ -114,7 +114,7 @@ static void* thread_PacketHandler(void *arg)
 
         if (readlen <= 0)
         {
-            printf("socket might had been disconnected from the remote host.\n");
+            ERROR_SystemLog("socket might had been disconnected from the remote host.\n");
             MODULE_ConnectManager_Close(connection_client);
 
             return NULL;
@@ -159,8 +159,8 @@ static void* thread_PacketHandler(void *arg)
 
                 if (readlen <= 0)
                 {
-                    printf("Socket reception Error!!!\n");
-                    printf("socket might had been disconnected from the remote host.");
+                    ERROR_SystemLog("Socket reception Error!!!\n");
+                    ERROR_SystemLog("socket might had been disconnected from the remote host.");
                     MODULE_ConnectManager_Close(connection_client);
                     return NULL;
                 }

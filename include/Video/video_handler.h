@@ -18,6 +18,11 @@
 #ifndef __VIDEO_HANDLER_H_
 #define __VIDEO_HANDLER_H_
 
+/*************************************************************
+ * @name Video Handler Strucure
+ *
+ *////@{
+
 typedef enum vh_msg_type {
     VH_MSG_TYPE_VIDEO_CODEC      = 1,
     VH_MSG_TYPE_VIDEO_DATA       = 2,
@@ -31,11 +36,14 @@ typedef struct video_data_msg {
     void* payload;
 } video_data_msg_t;
 
+/*************************************************************@}*/
+
 /*************************************************************
  * @name Video Handler Module
  *
  *////@{
-/** @brief
+
+/** @brief video handler init.
  *
  *  @return ERROR_T
  *
@@ -43,7 +51,7 @@ typedef struct video_data_msg {
  */
 extern ERROR_T MODULE_VideoHandler_Init(void);
 
-/** @brief
+/** @brief video handler destroy.
  *
  *  @return ERROR_T
  *
@@ -51,9 +59,9 @@ extern ERROR_T MODULE_VideoHandler_Init(void);
  */
 extern ERROR_T MODULE_VideoHandler_Destroy(void);
 
-/** @brief
+/** @brief video buffer per delayed
  *
- *  @return ERROR_T
+ *  @return VPD(video buffer per delayed)
  *
  *  @note
  */

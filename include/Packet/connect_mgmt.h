@@ -21,7 +21,8 @@
  * @name Video Handler Module
  *
  *////@{
-/** @brief
+
+/** @brief It will be return connected client count.
  *
  *  @return count of connections
  *
@@ -29,29 +30,29 @@
  */
 extern int MODULE_ConnectManager_GetCount(void);
 
-/** @brief
+/** @brief open connection by paramter
  *
- *  @param
- *  @param
- *  @param
- *
- *  @return ERROR_T
- *
- *  @note
- */
-extern ERROR_T MODULE_ConnectManager_Open(int32_t connection, int32_t connection_type, int32_t session_id);
-
-/** @brief
- *
- *  @param
+ *  @param connection_client
+ *  @param connection_type
+ *  @param session_id
  *
  *  @return ERROR_T
  *
  *  @note
  */
-extern ERROR_T MODULE_ConnectManager_Close(int32_t connection);
+extern ERROR_T MODULE_ConnectManager_Open(int32_t connection_client, int32_t connection_type, int32_t session_id);
 
-/** @brief
+/** @brief close connection by connection_client
+ *
+ *  @param connection_client
+ *
+ *  @return ERROR_T
+ *
+ *  @note
+ */
+extern ERROR_T MODULE_ConnectManager_Close(int32_t connection_client);
+
+/** @brief Close all connected client.
  *
  *  @return ERROR_T
  *

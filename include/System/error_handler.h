@@ -7,6 +7,11 @@
 #ifndef INCLUDE_BRIK_ERROR_H_
 #define INCLUDE_BRIK_ERROR_H_
 
+/*************************************************************
+ * @name Error status defined
+ *
+ *////@{
+
 #define BRIK_STATUS_BASE      0
 
 /** @enum SN_STATUS */
@@ -33,12 +38,14 @@ typedef enum error_status {
     ERROR_NOT_OK                             = (-1)
 } ERROR_STATUS;
 
+/*************************************************************@}*/
+
 /*************************************************************
  * @name System Error Handler
  *  Description of Message Queue Init and Uninit funtions.
  *////@{
 
-/** @brief
+/** @brief Error control for define function
  *
  *  @param errorStatus
  *  @param errorMeesage
@@ -52,7 +59,7 @@ typedef enum error_status {
 extern void ERROR_StatusCheck_Inline(BRIK_STATUS errorStatus, const char* errorMessage, const char* _file, const char* _func, const int _line);
 
 
-/** @brief
+/** @brief System log.
  *
  *  @param log
  *
@@ -61,7 +68,7 @@ extern void ERROR_StatusCheck_Inline(BRIK_STATUS errorStatus, const char* errorM
  */
 extern void ERROR_SystemLog(const char* log);
 
-/** @brief
+/** @brief System error check.
  *
  *  @param errorStatus
  *  @param errorMessage

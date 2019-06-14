@@ -14,7 +14,6 @@
 #include "brik_api.h"
 #include "packet_cmd.h"
 
-
 /* ******* STATIC DEFINE ******* */
 
 /* ******* GLOBAL VARIABLE ******* */

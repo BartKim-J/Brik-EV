@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
         // Brik is Working //
     }
 
-    return ERROR_OK;
+    return ret;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
