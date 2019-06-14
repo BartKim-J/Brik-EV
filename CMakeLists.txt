@@ -209,24 +209,32 @@ add_custom_target(update_udev
 
 # Service #
 add_custom_target(service_update
-    sudo cp ${PRJ_ROOT_PATH}/lib/service/brik.service /etc/systemd/system/brik.service &&
+    sudo cp ${PRJ_ROOT_PATH}/lib/service/brik_ap.service /etc/systemd/system/brik_ap.service &&
     sudo cp ${PRJ_ROOT_PATH}/lib/service/brik_airplay.service /etc/systemd/system/brik_airplay.service &&
+    sudo cp ${PRJ_ROOT_PATH}/lib/service/brik.service /etc/systemd/system/brik.service &&
     sudo systemctl daemon-reload
 )
 
 add_custom_target(service_enable
-    sudo systemctl enable brik.service &&
-    sudo systemctl enable brik_airplay.service 
+    sudo systemctl enable brik_ap.service &&
+    sudo systemctl enable brik_airplay.service &&
+    sudo systemctl enable brik.service 
 )
 
-add_custom_target(service_restart
-    sudo systemctl restart brik.service &&
-    sudo systemctl restart brik_airplay.service 
+add_custom_target(service_start
+    sudo systemctl restart brik_airplay.service && 
+    sudo systemctl restart brik.service 
+)
+
+add_custom_target(service_stop
+    sudo systemctl stop brik_airplay.service &&
+    sudo systemctl stop brik.service 
 )
 
 add_custom_target(service_disable
-    sudo systemctl disable brik.service &&
-    sudo systemctl disable brik_airplay.service 
+    sudo systemctl disable brik_ap.service &&
+    sudo systemctl disable brik_airplay.service &&
+    sudo systemctl disable brik.service  
 )
 
 ################### Target Setting ###################

@@ -1,0 +1,16 @@
+[Unit]
+Description=Brik AP Service
+Requires=networking.service
+After=networking.service
+
+[Service]
+User=root
+Group=root
+Type=simple
+
+WorkingDirectory=/home/brik
+ExecStart=/usr/sbin/hostapd -B /etc/hostapd/hostapd.conf 
+Restart=always
+
+[Install]
+WantedBy=networking.service
