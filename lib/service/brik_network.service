@@ -1,7 +1,7 @@
 [Unit]
-Description=Brik AP Service
-Requires=networking.service
-After=networking.service
+Description=Brik Network Service
+Requires=rc-local.service
+After=rc-local.service
 
 [Service]
 User=root
@@ -9,8 +9,10 @@ Group=root
 Type=simple
 
 WorkingDirectory=/home/brik
-ExecStart=/usr/sbin/hostapd -B /etc/hostapd/hostapd.conf 
-Restart=always
+ExecStart=/brik/brik_ev_c/lib/shell/brik_network.sh
+RemainAfterExit=yes
+Restart=on-failure
+RestartSec=3
 
 [Install]
-WantedBy=networking.service
+WantedBy=rc-local.service

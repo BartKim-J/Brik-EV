@@ -1,7 +1,7 @@
 [Unit]
 Description=Brik Airplay Service
-Requires=dnsmasq.service
-After=dnsmasq.service
+Requires=brik_network.service
+After=brik_network.service
 
 [Service]
 User=root
@@ -13,4 +13,4 @@ ExecStart=/brik/brik_ev_c/airplay_server/Airplay-ConnectivityForwarder
 Restart=always
 
 [Install]
-WantedBy=dnsmasq.service
+WantedBy=brik_network.service
