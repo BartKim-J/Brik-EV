@@ -36,7 +36,7 @@ ERROR_T MODULE_SocketListener_Init(void)
 {
     ERROR_T ret = ERROR_OK;
 
-    // Init socket and server thread
+    printf("MODULE INIT => Socket Listener handler.\n");
     sock_tcp = socket(AF_INET, SOCK_STREAM, 0);
     if (sock_tcp == ERROR_NOT_OK)
     {

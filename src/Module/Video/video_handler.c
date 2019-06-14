@@ -43,7 +43,8 @@ ERROR_T MODULE_VideoHandler_Init(void)
 {
     ERROR_T ret = ERROR_OK;
 
-    // init data queue for the thread
+    printf("MODULE INIT => Video handler.\n");
+
     ret = thread_queue_init(&queue_vh);
     if(ret != ERROR_OK)
     {

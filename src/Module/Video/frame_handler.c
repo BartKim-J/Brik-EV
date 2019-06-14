@@ -65,7 +65,7 @@ ERROR_T MODULE_FrameHandler_Init(void)
 
     allocatedFrame = 0;
 
-    // init data queue for the thread
+    printf("MODULE INIT => Frame handler.\n");
     ret = thread_queue_init(&queue_fh);
     if(ret != ERROR_OK)
     {

@@ -13,7 +13,6 @@
 
 /* ******* GLOBAL VARIABLE ******* */
 
-
 /* ******* STATIC FUNCTIONS ******* */
 /* *** Module *** */
 static ERROR_T sModules_Init(void);
@@ -28,13 +27,13 @@ int main(int argc, char* argv[])
 {
     ERROR_T ret = ERROR_OK;
 
-    ret = sModules_Init();
+//    ERROR_SystemLog("\n\n Brik Start. \n");
 
-    ERROR_SystemLog("\n\n Brik Start. \n");
+    ret = sModules_Init();
 
     while(true)
     {
-        // Brik is Working //
+        /*/ Brik is Working /*/
     }
 
     return ret;
