@@ -2,7 +2,7 @@
 
 VERSION_MAJOR=1
 VERSION_MINOR=0
-echo "Brik Back Script ( $VERSION_MAJOR.$VERSION_MINOR )"
+echo "Brik Backup Script ( $VERSION_MAJOR.$VERSION_MINOR )"
 
 SRC=/
 DST=/media/BRIK_USB/Workspace/Brik/backup
