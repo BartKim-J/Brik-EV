@@ -49,7 +49,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PRJ_BINARY_PATH}/lib)
 
 ################### Library & Source & Include Setting ###################
 # link library (-l)
-link_libraries(pthread avcodec avfilter avformat avutil swscale SDL SDL_image m)
+link_libraries(pthread avcodec avfilter avformat avutil swscale SDL2 SDL SDL_image m)
 
 # link library directory (-L)
 link_directories(/usr/local/lib /usr/lib)
@@ -146,9 +146,9 @@ set(
     # Config Name #
     Config
 
-    -DDISPLAY_TYPE_SDL
-    #-DDISPLAY_TYPE_SDL2    
-    #-DDISPLAY_TYPE_FB
+   #-DDISPLAY_TYPE_SDL
+    -DDISPLAY_TYPE_SDL2    
+   #-DDISPLAY_TYPE_FB
 
 )
 
@@ -216,7 +216,7 @@ add_custom_target(service_update
 )
 
 add_custom_target(service_enable
-    sudo systemctl enable brik_network.service &&
+   #sudo systemctl enable brik_network.service &&
     sudo systemctl enable brik_airplay.service &&
     sudo systemctl enable brik.service 
 )
@@ -232,7 +232,7 @@ add_custom_target(service_stop
 )
 
 add_custom_target(service_disable
-    sudo systemctl disable brik_network.service &&
+   #sudo systemctl disable brik_network.service &&
     sudo systemctl disable brik_airplay.service &&
     sudo systemctl disable brik.service  
 )

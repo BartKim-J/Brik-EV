@@ -47,7 +47,7 @@
  *////@{
 
 /* *** SDL *** */
-#ifdef SDL2
+#ifdef DISPLAY_TYPE_SDL2
 #include <SDL2/SDL.h>
 #else // SDL1
 #include <SDL/SDL.h>

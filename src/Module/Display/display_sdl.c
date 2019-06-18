@@ -231,7 +231,7 @@ static ERROR_T sScreenUpdate(moduleImageViewer_t* module, AVFrame* av_frame)
 
     SDL_LockYUVOverlay(bitmap);
 
-#if true
+
     frameTarget.data[0] = bitmap->pixels[0];
     frameTarget.data[1] = bitmap->pixels[2];
     frameTarget.data[2] = bitmap->pixels[1];
@@ -239,20 +239,10 @@ static ERROR_T sScreenUpdate(moduleImageViewer_t* module, AVFrame* av_frame)
     frameTarget.linesize[0] = bitmap->pitches[0];
     frameTarget.linesize[1] = bitmap->pitches[2];
     frameTarget.linesize[2] = bitmap->pitches[1];
-
+#if true
     sws_scale(module->sws_ctx, (uint8_t const * const *)av_frame->data,
               av_frame->linesize, 0, av_frame->height,
               frameTarget.data, frameTarget.linesize);
-
-#else
-    bitmap->pixels[0] = av_frame->data[0];
-    bitmap->pixels[1] = av_frame->data[2];
-    bitmap->pixels[2] = av_frame->data[1];
-
-    bitmap->pitches[0] = av_frame->linesize[0];
-    bitmap->pitches[1] = av_frame->linesize[2];
-    bitmap->pitches[2] = av_frame->linesize[1];
-
 #endif
 
     SDL_UnlockYUVOverlay(bitmap);
