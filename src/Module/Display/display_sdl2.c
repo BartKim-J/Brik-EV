@@ -57,7 +57,7 @@ ERROR_T MODULE_Display_Init(void)
     ret = SDL_Init(SDL_INIT_VIDEO);
     if(ret != 0)
     {
-        SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
+        SDL_Log("Unable to initialize SDL2: %s", SDL_GetError());
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED, "Not Initialized params.");
     }
 

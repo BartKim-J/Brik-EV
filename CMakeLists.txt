@@ -49,7 +49,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PRJ_BINARY_PATH}/lib)
 
 ################### Library & Source & Include Setting ###################
 # link library (-l)
-link_libraries(pthread avcodec avfilter avformat avutil swscale SDL2 SDL SDL_image m)
+link_libraries(pthread avcodec avfilter avformat avutil swscale SDL SDL_image m)
 
 # link library directory (-L)
 link_directories(/usr/local/lib /usr/lib)
@@ -146,8 +146,8 @@ set(
     # Config Name #
     Config
 
-   #-DDISPLAY_TYPE_SDL
-    -DDISPLAY_TYPE_SDL2    
+   -DDISPLAY_TYPE_SDL
+   #-DDISPLAY_TYPE_SDL2    
    #-DDISPLAY_TYPE_FB
 
 )

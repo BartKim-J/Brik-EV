@@ -22,12 +22,12 @@ typedef struct threadqueue THQ;
 #define UNALLOCATED_FORMAT               0
 
 #define FRAME_BUFFER_MAX               254
-#define FRAME_THREAD_MAX                 3
+#define FRAME_THREAD_MAX                16
 
 /* *** FRAME *** */
-#define LIMIT_FPD         FRAME_THREAD_MAX // frame packet delayed
-#define LIMIT_VPD                       10 // video packet delayed
-#define LIMIT_SKIP_FRAME_VALUE        (0.7)
+#define LIMIT_FPD                       FRAME_THREAD_MAX * 3 // frame packet delayed
+#define LIMIT_VPD                       FRAME_THREAD_MAX * 3 // video packet delayed
+#define LIMIT_SKIP_FRAME_VALUE        (0.3)
 
 /* ******* GLOBAL VARIABLE ******* */
 static pthread_t       thread_fh[FRAME_THREAD_MAX];
@@ -35,6 +35,7 @@ static THQ             queue_fh;
 
 
 static pthread_mutex_t mutex_fh = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t mutex_fh_param = PTHREAD_MUTEX_INITIALIZER;
 
 /* *** FRAME *** */
 static int prevFrame_Width  = UNALLOCATED_RESOLUTION;
@@ -82,6 +83,12 @@ ERROR_T MODULE_FrameHandler_Init(void)
     }
 
     ret = pthread_mutex_init(&mutex_fh, NULL);
+    if(ret != ERROR_OK)
+    {
+        ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize mutex.");
+    }
+
+    ret = pthread_mutex_init(&mutex_fh_param, NULL);
     if(ret != ERROR_OK)
     {
         ERROR_StatusCheck(BRIK_STATUS_NOT_INITIALIZED ,"Failed to initialize mutex.");
@@ -372,11 +379,15 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
         return ERROR_NOT_OK;
     }
 
+
+
     if((frame->width != prevFrame_Width) || (frame->height != prevFrame_Height))
     {
         MODULE_Display_Clean();
 
         MODULE_Display_Init_Overlay(frame->width, frame->height, frame->format, 0);
+
+        pthread_mutex_lock(&mutex_fh_param);
 
         prevFrame_Width  = frame->width;
         prevFrame_Height = frame->height;
@@ -384,11 +395,15 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
         skipCnt    = 0;
         skipFlag   = false;
         skipMax    = 0;
+
+        pthread_mutex_unlock(&mutex_fh_param);
     }
 
 #if true
 
-    skipMax = LIMIT_SKIP_FRAME_VALUE * (fpd / LIMIT_FPD);
+    pthread_mutex_lock(&mutex_fh_param);
+
+    skipMax = LIMIT_SKIP_FRAME_VALUE * (vpd / LIMIT_VPD);
 
     skipMax *= skipMax;
 
@@ -412,9 +427,12 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
 #else
     MODULE_Display_Update(frame);
 #endif
+
     fps = MODULE_Display_FPS();
-    fpd = allocatedFrame;;
+    fpd = allocatedFrame;
     vpd = MODULE_VideoHandler_VPD();
+
+    pthread_mutex_unlock(&mutex_fh_param);
 
 #if false // MODULE BACK TRACING.
     // Data Log
