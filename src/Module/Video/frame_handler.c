@@ -25,9 +25,9 @@ typedef struct threadqueue THQ;
 #define FRAME_THREAD_MAX                16
 
 /* *** FRAME *** */
-#define LIMIT_FPD                       FRAME_THREAD_MAX * 3 // frame packet delayed
-#define LIMIT_VPD                       FRAME_THREAD_MAX * 3 // video packet delayed
-#define LIMIT_SKIP_FRAME_VALUE        (0.3)
+#define LIMIT_FPD                       (FRAME_THREAD_MAX * 1.6) // frame packet delayed
+#define LIMIT_VPD                       (FRAME_THREAD_MAX * 1.6) // video packet delayed
+#define LIMIT_SKIP_FRAME_VALUE          (1.6)
 
 /* ******* GLOBAL VARIABLE ******* */
 static pthread_t       thread_fh[FRAME_THREAD_MAX];
@@ -217,7 +217,7 @@ ERROR_T Module_FrameHandler_BufferFree(frame_data_t* frameData)
     }
     else
     {
-        ERROR_StatusCheck(BRIK_STATUS_NOT_OK ,"Frame Buffer Under Index.");
+        //ERROR_StatusCheck(BRIK_STATUS_NOT_OK ,"Frame Buffer Under Index.");
     }
 
     pthread_mutex_unlock(&mutex_fh);
@@ -380,6 +380,7 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
     }
 
 
+    pthread_mutex_lock(&mutex_fh_param);
 
     if((frame->width != prevFrame_Width) || (frame->height != prevFrame_Height))
     {
@@ -387,7 +388,7 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
 
         MODULE_Display_Init_Overlay(frame->width, frame->height, frame->format, 0);
 
-        pthread_mutex_lock(&mutex_fh_param);
+
 
         prevFrame_Width  = frame->width;
         prevFrame_Height = frame->height;
@@ -396,22 +397,34 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
         skipFlag   = false;
         skipMax    = 0;
 
-        pthread_mutex_unlock(&mutex_fh_param);
+
     }
+
+    pthread_mutex_unlock(&mutex_fh_param);
 
 #if true
 
     pthread_mutex_lock(&mutex_fh_param);
 
-    skipMax = LIMIT_SKIP_FRAME_VALUE * (vpd / LIMIT_VPD);
+    skipMax = LIMIT_SKIP_FRAME_VALUE * (fpd / LIMIT_FPD);
 
-    skipMax *= skipMax;
+    if(frame->width > frame->height)
+    {
+        skipMax = skipMax * 2;
+    }
 
     if((!skipFlag) || (skipMax == 0))
     {
         skipFlag = true;
 
+        fpd = allocatedFrame;
+
+        pthread_mutex_unlock(&mutex_fh_param);
+
         MODULE_Display_Update(frame);
+
+        fps = MODULE_Display_FPS();
+        vpd = MODULE_VideoHandler_VPD();
     }
     else
     {
@@ -422,17 +435,13 @@ static ERROR_T sFrameBuffer_Display(frame_data_t* frameData)
             skipCnt  = 0;
             skipFlag = false;
         }
+
+        pthread_mutex_unlock(&mutex_fh_param);
     }
 
 #else
     MODULE_Display_Update(frame);
 #endif
-
-    fps = MODULE_Display_FPS();
-    fpd = allocatedFrame;
-    vpd = MODULE_VideoHandler_VPD();
-
-    pthread_mutex_unlock(&mutex_fh_param);
 
 #if false // MODULE BACK TRACING.
     // Data Log

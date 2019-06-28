@@ -13,7 +13,7 @@
 // How many frames time values to keep
 // The higher the value the smoother the result is...
 // Don't make it 0 or less :)
-#define FRAME_VALUES 30
+#define FRAME_VALUES 10
 
 /* ******* GLOBAL VARIABLE ******* */
 static pthread_mutex_t mutex_sdl = PTHREAD_MUTEX_INITIALIZER;
@@ -327,7 +327,7 @@ static void sFPS_Update(void)
 
     // I've included a test to see if the whole array has been written to or not. This will stop
     // strange values on the first few (FRAME_VALUES) frames.
-    if (framecount < FRAME_VALUES)
+    if(framecount < FRAME_VALUES)
     {
         count = framecount;
     }
