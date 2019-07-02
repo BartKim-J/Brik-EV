@@ -44,7 +44,7 @@ inline void ERROR_StatusCheck_Inline(BRIK_STATUS errorStatus, const char* errorM
     {
         printf("\n\n\n* BRIK ERROR * \nFILE : %s\nFUNC : %s\nLINE : %d\nMSG  : %s\nCODE : %d\n\n\n",_file, _func, _line, errorMessage, errorStatus); fflush(stdout);
 
-#if falase /* Reboot or Exit */
+#if true /* Reboot or Exit */
         if(!isRebooting)
         {
             isRebooting = true;

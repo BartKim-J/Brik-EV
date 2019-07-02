@@ -25,9 +25,9 @@ typedef struct threadqueue THQ;
 #define FRAME_THREAD_MAX                16
 
 /* *** FRAME *** */
-#define LIMIT_FPD                       (FRAME_THREAD_MAX * 1.6) // frame packet delayed
-#define LIMIT_VPD                       (FRAME_THREAD_MAX * 1.6) // video packet delayed
-#define LIMIT_SKIP_FRAME_VALUE          (1.6)
+#define LIMIT_FPD                       (FRAME_THREAD_MAX * 1) // frame packet delayed
+#define LIMIT_VPD                       (FRAME_THREAD_MAX * 1) // video packet delayed
+#define LIMIT_SKIP_FRAME_VALUE          (1.3)
 
 /* ******* GLOBAL VARIABLE ******* */
 static pthread_t       thread_fh[FRAME_THREAD_MAX];
